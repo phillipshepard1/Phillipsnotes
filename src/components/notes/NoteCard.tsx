@@ -171,11 +171,7 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
-                  className={cn(
-                    'p-1.5 rounded-lg hover:bg-accent transition-colors',
-                    'opacity-0 group-hover:opacity-100',
-                    isSelected && 'opacity-100'
-                  )}
+                  className="p-1.5 rounded-lg hover:bg-accent transition-colors"
                   onClick={(e) => e.stopPropagation()}
                 >
                   <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
