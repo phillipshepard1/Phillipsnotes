@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, MoreHorizontal } from 'lucide-react'
+import { ArrowLeft, MoreHorizontal, Sparkles } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { NotesList } from './NotesList'
 import { EditorPanel } from './EditorPanel'
@@ -36,7 +36,7 @@ export function AppShell() {
 
   // Panel resize state (desktop only)
   const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
-  const [notesListWidth, setNotesListWidth] = useState(288) // w-72 = 288px
+  const [notesListWidth, setNotesListWidth] = useState(420) // wider default to show full note content
   const isResizing = useRef<'sidebar' | 'notesList' | null>(null)
 
   // Toast for drag-and-drop feedback
@@ -368,15 +368,24 @@ export function AppShell() {
                           Notes
                         </span>
                       </div>
-                      {/* Info button */}
+                      {/* AI and Info buttons */}
                       {selectedNoteId && (
-                        <NoteInfoSheet
-                          noteId={selectedNoteId}
-                          onNoteSelect={(id) => {
-                            setSelectedNoteId(id)
-                          }}
-                          isMobile={true}
-                        />
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => setIsAIChatOpen(!isAIChatOpen)}
+                            className="flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
+                            title="AI Assistant"
+                          >
+                            <Sparkles className="h-5 w-5" />
+                          </button>
+                          <NoteInfoSheet
+                            noteId={selectedNoteId}
+                            onNoteSelect={(id) => {
+                              setSelectedNoteId(id)
+                            }}
+                            isMobile={true}
+                          />
+                        </div>
                       )}
                     </div>
                     {/* Editor content - scrollable */}
@@ -401,6 +410,7 @@ export function AppShell() {
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onCreateNote={handleCreateNote}
+          onImportClick={() => setIsImportDialogOpen(true)}
           isListening={isListening}
           onStartListening={startListening}
           onStopListening={stopListening}
