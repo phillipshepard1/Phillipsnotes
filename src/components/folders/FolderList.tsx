@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Folder, FolderPlus, ChevronRight, Trash2, FileText, GripVertical, Check } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
-import { LargeTitle } from '@/components/ui/LargeTitle'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useFolders, useCreateFolder, useDeleteFolder } from '@/hooks/useFolders'
 import { useNotes } from '@/hooks/useNotes'
@@ -114,44 +113,46 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
 
   return (
     <div className="flex flex-col h-full bg-background">
-      {/* Header */}
+      {/* Header with title - Apple Notes style */}
       <div
-        className="flex items-center justify-end gap-2 px-4"
-        style={{
-          paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-          minHeight: 'calc(44px + env(safe-area-inset-top))',
-        }}
+        className="flex-shrink-0 px-4"
+        style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        {isEditMode ? (
-          <button
-            onClick={() => {
-              setIsEditMode(false)
-              setSelectedFolderIds(new Set())
-            }}
-            className="text-primary font-medium text-base"
-          >
-            Done
-          </button>
-        ) : (
-          <>
+        {/* Action buttons row */}
+        <div className="flex items-center justify-end gap-1 h-11">
+          {isEditMode ? (
             <button
-              onClick={() => setIsCreatingFolder(true)}
-              className="flex h-10 w-10 items-center justify-center rounded-lg text-primary active:bg-primary/10"
+              onClick={() => {
+                setIsEditMode(false)
+                setSelectedFolderIds(new Set())
+              }}
+              className="text-primary font-medium text-[17px] px-2 py-1"
             >
-              <FolderPlus className="h-5 w-5" />
+              Done
             </button>
-            <button
-              onClick={() => setIsEditMode(true)}
-              className="text-primary font-medium text-base px-2"
-            >
-              Edit
-            </button>
-          </>
-        )}
-      </div>
+          ) : (
+            <>
+              <button
+                onClick={() => setIsCreatingFolder(true)}
+                className="flex h-9 w-9 items-center justify-center rounded-full text-primary active:bg-primary/10"
+              >
+                <FolderPlus className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => setIsEditMode(true)}
+                className="text-primary font-medium text-[17px] px-2 py-1"
+              >
+                Edit
+              </button>
+            </>
+          )}
+        </div>
 
-      {/* Large Title */}
-      <LargeTitle title="Folders" className="mb-4" />
+        {/* Large Title - tight spacing */}
+        <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground mb-3">
+          Folders
+        </h1>
+      </div>
 
       {/* New Folder Input */}
       <AnimatePresence>

@@ -7,7 +7,6 @@ import { EditorPanel } from './EditorPanel'
 import { MobileToolbar } from './MobileToolbar'
 import { FolderList } from '@/components/folders/FolderList'
 import { CircularButton } from '@/components/ui/CircularButton'
-import { LargeTitle } from '@/components/ui/LargeTitle'
 import { EdgeSwipeBack } from '@/components/ui/EdgeSwipeBack'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
@@ -237,16 +236,13 @@ export function AppShell() {
               >
                 <EdgeSwipeBack onBack={goBack}>
                   <div className="h-full flex flex-col">
-                    {/* Fixed Header - won't scroll */}
-                    <div className="flex-shrink-0">
-                      {/* Mobile Notes Header */}
-                      <div
-                        className="flex items-center justify-between px-2"
-                        style={{
-                          paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                          minHeight: 'calc(44px + env(safe-area-inset-top))',
-                        }}
-                      >
+                    {/* Fixed Header - Apple Notes style */}
+                    <div
+                      className="flex-shrink-0 px-4"
+                      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+                    >
+                      {/* Action buttons row */}
+                      <div className="flex items-center justify-between h-11">
                         <CircularButton onClick={goBack} size="md">
                           <ArrowLeft className="h-5 w-5" />
                         </CircularButton>
@@ -255,12 +251,13 @@ export function AppShell() {
                         </CircularButton>
                       </div>
 
-                      {/* Large Title */}
-                      <LargeTitle
-                        title={isTrashView ? 'Recently Deleted' : folderName}
-                        subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
-                        className="mb-2"
-                      />
+                      {/* Large Title - tight spacing */}
+                      <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+                        {isTrashView ? 'Recently Deleted' : folderName}
+                      </h1>
+                      <p className="text-[17px] text-muted-foreground mb-3">
+                        {noteCount} Note{noteCount !== 1 ? 's' : ''}
+                      </p>
                     </div>
 
                     {/* Notes List - scrollable */}
@@ -292,27 +289,25 @@ export function AppShell() {
               >
                 <EdgeSwipeBack onBack={handleClearSearch}>
                   <div className="h-full flex flex-col">
-                    {/* Fixed Header - won't scroll */}
-                    <div className="flex-shrink-0">
-                      {/* Search Header */}
-                      <div
-                        className="flex items-center justify-between px-2"
-                        style={{
-                          paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                          minHeight: 'calc(44px + env(safe-area-inset-top))',
-                        }}
-                      >
+                    {/* Fixed Header - Apple Notes style */}
+                    <div
+                      className="flex-shrink-0 px-4"
+                      style={{ paddingTop: 'env(safe-area-inset-top)' }}
+                    >
+                      {/* Action buttons row */}
+                      <div className="flex items-center justify-between h-11">
                         <CircularButton onClick={handleClearSearch} size="md">
                           <ArrowLeft className="h-5 w-5" />
                         </CircularButton>
                       </div>
 
-                      {/* Large Title */}
-                      <LargeTitle
-                        title="Search"
-                        subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
-                        className="mb-2"
-                      />
+                      {/* Large Title - tight spacing */}
+                      <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
+                        Search
+                      </h1>
+                      <p className="text-[17px] text-muted-foreground mb-3">
+                        {searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
+                      </p>
                     </div>
 
                     {/* Search Results - scrollable */}
