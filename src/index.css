@@ -1,5 +1,45 @@
 @import "tailwindcss";
 
+/* PWA Safe Area & iOS Optimizations */
+html {
+  min-height: calc(100% + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Prevent pull-to-refresh on iOS */
+  overscroll-behavior-y: none;
+}
+
+/* Suppress browser behaviors for native feel */
+* {
+  /* Remove tap highlight on iOS */
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent text selection on UI elements */
+  -webkit-touch-callout: none;
+}
+
+/* Allow text selection only in content areas */
+.selectable,
+.bn-editor,
+input,
+textarea {
+  -webkit-touch-callout: default;
+  user-select: text;
+}
+
+/* Prevent overscroll/rubber-banding */
+body {
+  overscroll-behavior: none;
+  /* Prevent zoom on double-tap */
+  touch-action: manipulation;
+}
+
+/* PWA Standalone mode detection */
+@media all and (display-mode: standalone) {
+  /* Additional styles for installed PWA */
+  body {
+    /* Slightly different background to distinguish from browser */
+  }
+}
+
 @theme {
   --color-background: hsl(0 0% 100%);
   --color-foreground: hsl(222.2 84% 4.9%);

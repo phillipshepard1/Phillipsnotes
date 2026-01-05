@@ -5,9 +5,14 @@ import { ThemeProvider } from '@/hooks/useTheme'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { AppShell } from '@/components/layout/AppShell'
 import { useAuth } from '@/hooks/useAuth'
+import { useNoteCacheSync } from '@/hooks/useLocalSearch'
+import { UpdatePrompt, InstallPrompt } from '@/components/pwa'
 
 function AppContent() {
   const { user, isLoading } = useAuth()
+
+  // Sync notes to IndexedDB for instant search
+  useNoteCacheSync()
 
   if (isLoading) {
     return (
@@ -33,6 +38,8 @@ export default function App() {
       <ThemeProvider>
         <AuthProvider>
           <AppContent />
+          <UpdatePrompt />
+          <InstallPrompt />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
