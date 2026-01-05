@@ -2,10 +2,11 @@
 
 /* PWA Safe Area & iOS Optimizations */
 html {
-  min-height: calc(100% + env(safe-area-inset-top));
-  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  /* Let content extend under status bar - components handle their own safe area */
+  min-height: 100%;
   /* Prevent pull-to-refresh on iOS */
   overscroll-behavior-y: none;
+  background: var(--color-background);
 }
 
 /* Suppress browser behaviors for native feel */
@@ -30,6 +31,26 @@ body {
   overscroll-behavior: none;
   /* Prevent zoom on double-tap */
   touch-action: manipulation;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
+/* Blurry status bar overlay for iOS PWA - creates native feel */
+@supports (padding-top: env(safe-area-inset-top)) {
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top);
+    background: var(--color-background);
+    opacity: 0.85;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    z-index: 9999;
+    pointer-events: none;
+  }
 }
 
 /* PWA Standalone mode detection */

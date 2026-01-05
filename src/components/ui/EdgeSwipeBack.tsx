@@ -40,10 +40,6 @@ export function EdgeSwipeBack({
   // Overlay that darkens the previous screen
   const overlayOpacity = useTransform(x, [0, SCREEN_WIDTH * 0.5], [0.4, 0])
 
-  // Back chevron indicator
-  const chevronOpacity = useTransform(x, [0, 60, BACK_THRESHOLD], [0, 0.7, 1])
-  const chevronX = useTransform(x, [0, BACK_THRESHOLD], [0, 12])
-
   // Track touch
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
@@ -184,19 +180,6 @@ export function EdgeSwipeBack({
         transition={{ type: 'spring', damping: 30, stiffness: 400 }}
       >
         {children}
-      </motion.div>
-
-      {/* Back chevron that appears on left edge */}
-      <motion.div
-        className="absolute left-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
-        style={{
-          opacity: chevronOpacity,
-          x: chevronX,
-        }}
-      >
-        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-lg backdrop-blur-sm">
-          <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
-        </div>
       </motion.div>
 
       {/* Left edge touch zone */}
