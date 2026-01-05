@@ -1,4 +1,4 @@
-import { LogOut, Search, Download, Tag, Settings } from 'lucide-react'
+import { LogOut, Search, Tag, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { FolderTree } from '@/components/folders/FolderTree'
 import { TagManager } from '@/components/tags/TagManager'
@@ -10,7 +10,6 @@ interface SidebarProps {
   selectedFolderId: string | undefined
   onFolderSelect: (id: string | undefined) => void
   onSearch: (query: string) => void
-  onImportClick?: () => void
   searchInputRef?: React.RefObject<HTMLInputElement | null>
   isTrashSelected?: boolean
   onTrashSelect?: () => void
@@ -18,7 +17,7 @@ interface SidebarProps {
   onNoteMoved?: (message: string, type: 'success' | 'warning') => void
 }
 
-export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportClick, searchInputRef, isTrashSelected, onTrashSelect, isMobile = false, onNoteMoved }: SidebarProps) {
+export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, searchInputRef, isTrashSelected, onTrashSelect, isMobile = false, onNoteMoved }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false)
@@ -77,18 +76,6 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
         >
           <Tag className="w-4 h-4" />
           Manage Tags
-        </button>
-        <button
-          onClick={onImportClick}
-          className={cn(
-            'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm',
-            'bg-background/80 text-foreground hover:bg-background transition-colors',
-            'border border-border',
-            isMobile && 'min-h-[44px]'
-          )}
-        >
-          <Download className="w-4 h-4" />
-          Import
         </button>
         <button
           onClick={() => setIsSettingsOpen(true)}

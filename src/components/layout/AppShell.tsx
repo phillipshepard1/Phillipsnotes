@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft, MoreHorizontal, Sparkles } from 'lucide-react'
+import { ArrowLeft, MoreHorizontal } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { NotesList } from './NotesList'
 import { EditorPanel } from './EditorPanel'
@@ -9,9 +9,6 @@ import { FolderList } from '@/components/folders/FolderList'
 import { CircularButton } from '@/components/ui/CircularButton'
 import { EdgeSwipeBack } from '@/components/ui/EdgeSwipeBack'
 import { NoteInfoSheet } from '@/components/editor/NoteInfoSheet'
-import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
-import { AIFloatingButton } from '@/components/ai/AIFloatingButton'
-import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
 import { Toast, useToast } from '@/components/ui/Toast'
@@ -19,27 +16,19 @@ import { DragOverlay } from '@/components/ui/DragOverlay'
 import { DragProvider } from '@/context/DragContext'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useCreateNote, useNotes, useSearchNotes } from '@/hooks/useNotes'
-import { useSemanticSearch } from '@/hooks/useAI'
 import { NotesListView } from '@/components/notes/NotesListView'
-import { SemanticSearchResults } from '@/components/search/SemanticSearchResults'
 import { useFolders } from '@/hooks/useFolders'
 import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
-import { cn } from '@/lib/utils'
 
 export function AppShell() {
   // undefined = "All Notes", string = specific folder ID
   const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>(undefined)
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
-  const [isAIChatOpen, setIsAIChatOpen] = useState(false)
-  const [isImportDialogOpen, setIsImportDialogOpen] = useState(false)
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false)
   const [showSaveFeedback, setShowSaveFeedback] = useState(false)
   const [isTrashView, setIsTrashView] = useState(false)
-  const [isSmartSearch, setIsSmartSearch] = useState(false)
-  const [isInfoSheetOpen, setIsInfoSheetOpen] = useState(false)
-  const [autoSuggestTags, setAutoSuggestTags] = useState(false)
 
   // Panel resize state (desktop only)
   const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
@@ -71,21 +60,7 @@ export function AppShell() {
 
   // Search results - text search
   const { data: searchResults } = useSearchNotes(searchQuery)
-
-  // Semantic search
-  const { results: semanticResults, isSearching: isSemanticSearching, search: semanticSearch } = useSemanticSearch()
-
-  // Combined search results count
-  const searchResultCount = isSmartSearch
-    ? semanticResults?.length || 0
-    : searchResults?.length || 0
-
-  // Trigger semantic search when query changes and smart search is enabled
-  useEffect(() => {
-    if (isSmartSearch && searchQuery.length >= 2) {
-      semanticSearch(searchQuery)
-    }
-  }, [isSmartSearch, searchQuery, semanticSearch])
+  const searchResultCount = searchResults?.length || 0
 
   // Speech recognition for voice search
   const { isListening, startListening, stopListening } = useSpeechRecognition({
@@ -176,14 +151,10 @@ export function AppShell() {
   const handleEscape = useCallback(() => {
     if (isShortcutsModalOpen) {
       setIsShortcutsModalOpen(false)
-    } else if (isAIChatOpen) {
-      setIsAIChatOpen(false)
-    } else if (isImportDialogOpen) {
-      setIsImportDialogOpen(false)
     } else if (searchQuery) {
       setSearchQuery('')
     }
-  }, [isShortcutsModalOpen, isAIChatOpen, isImportDialogOpen, searchQuery])
+  }, [isShortcutsModalOpen, searchQuery])
 
   useKeyboardShortcuts({
     shortcuts: [
@@ -337,51 +308,24 @@ export function AppShell() {
                       <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
                         Search
                       </h1>
-                      <div className="flex items-center justify-between mb-3">
-                        <p className="text-[17px] text-muted-foreground">
-                          {searchQuery
-                            ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}`
-                            : 'Type to search'}
-                        </p>
-                        {/* Smart Search Toggle */}
-                        <button
-                          onClick={() => setIsSmartSearch(!isSmartSearch)}
-                          className={cn(
-                            'flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors',
-                            isSmartSearch
-                              ? 'bg-primary text-primary-foreground'
-                              : 'bg-muted text-muted-foreground'
-                          )}
-                        >
-                          <Sparkles className="h-3.5 w-3.5" />
-                          Smart
-                        </button>
-                      </div>
+                      <p className="text-[17px] text-muted-foreground mb-3">
+                        {searchQuery
+                          ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}`
+                          : 'Type to search'}
+                      </p>
                     </div>
 
                     {/* Search Results - scrollable */}
                     <div className="flex-1 min-h-0 overflow-hidden">
                       {searchQuery.length >= 2 ? (
-                        isSmartSearch ? (
-                          <SemanticSearchResults
-                            results={semanticResults}
-                            isLoading={isSemanticSearching}
-                            selectedNoteId={selectedNoteId}
-                            onNoteSelect={handleNoteSelect}
-                          />
-                        ) : (
-                          <NotesListView
-                            searchQuery={searchQuery}
-                            selectedNoteId={selectedNoteId}
-                            onNoteSelect={handleNoteSelect}
-                          />
-                        )
+                        <NotesListView
+                          searchQuery={searchQuery}
+                          selectedNoteId={selectedNoteId}
+                          onNoteSelect={handleNoteSelect}
+                        />
                       ) : (
                         <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                           <p>Enter at least 2 characters to search</p>
-                          {isSmartSearch && (
-                            <p className="text-sm mt-1 text-primary">AI-powered search enabled</p>
-                          )}
                         </div>
                       )}
                     </div>
@@ -418,38 +362,21 @@ export function AppShell() {
                           Notes
                         </span>
                       </div>
-                      {/* AI and Info buttons */}
+                      {/* Info button */}
                       {selectedNoteId && (
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => setIsAIChatOpen(!isAIChatOpen)}
-                            className="flex items-center justify-center h-9 w-9 rounded-full text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors"
-                            title="AI Assistant"
-                          >
-                            <Sparkles className="h-5 w-5" />
-                          </button>
-                          <NoteInfoSheet
-                            noteId={selectedNoteId}
-                            onNoteSelect={(id) => {
-                              setSelectedNoteId(id)
-                            }}
-                            isMobile={true}
-                            open={isInfoSheetOpen}
-                            onOpenChange={(open) => {
-                              setIsInfoSheetOpen(open)
-                              if (!open) setAutoSuggestTags(false)
-                            }}
-                            autoSuggestTags={autoSuggestTags}
-                          />
-                        </div>
+                        <NoteInfoSheet
+                          noteId={selectedNoteId}
+                          onNoteSelect={(id) => {
+                            setSelectedNoteId(id)
+                          }}
+                          isMobile={true}
+                        />
                       )}
                     </div>
                     {/* Editor content - scrollable */}
                     <div className="flex-1 min-h-0 overflow-hidden">
                       <EditorPanel
                         noteId={selectedNoteId}
-                        onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
-                        isAIChatOpen={isAIChatOpen}
                         onNoteSelect={setSelectedNoteId}
                         isMobile={true}
                       />
@@ -466,46 +393,10 @@ export function AppShell() {
           searchQuery={searchQuery}
           onSearchChange={handleSearch}
           onCreateNote={handleCreateNote}
-          onImportClick={() => setIsImportDialogOpen(true)}
           isListening={isListening}
           onStartListening={startListening}
           onStopListening={stopListening}
           onSearchFocus={handleSearchFocus}
-        />
-
-        {/* AI Chat Sidebar */}
-        <AIChatSidebar
-          isOpen={isAIChatOpen}
-          onClose={() => setIsAIChatOpen(false)}
-          noteId={selectedNoteId || undefined}
-          onNoteSelect={setSelectedNoteId}
-        />
-
-        {/* AI Floating Action Button - only in editor view */}
-        {activeView === 'editor' && selectedNoteId && !isAIChatOpen && (
-          <AIFloatingButton
-            onAskAI={() => setIsAIChatOpen(true)}
-            onSummarize={() => {
-              // TODO: Implement summarize action
-              setIsAIChatOpen(true)
-            }}
-            onImproveWriting={() => {
-              // TODO: Implement improve writing action
-              setIsAIChatOpen(true)
-            }}
-            onSuggestTags={() => {
-              setAutoSuggestTags(true)
-              setIsInfoSheetOpen(true)
-            }}
-          />
-        )}
-
-        {/* Import Dialog */}
-        <ImportDialog
-          open={isImportDialogOpen}
-          onOpenChange={setIsImportDialogOpen}
-          folderId={selectedFolderId}
-          onNoteCreated={setSelectedNoteId}
         />
 
         {/* Shortcuts Modal */}
@@ -536,7 +427,6 @@ export function AppShell() {
           selectedFolderId={selectedFolderId}
           onFolderSelect={handleFolderSelect}
           onSearch={handleSearch}
-          onImportClick={() => setIsImportDialogOpen(true)}
           searchInputRef={searchInputRef}
           isTrashSelected={isTrashView}
           onTrashSelect={handleTrashSelect}
@@ -572,27 +462,9 @@ export function AppShell() {
       <div className="flex-1 min-w-0">
         <EditorPanel
           noteId={selectedNoteId}
-          onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
-          isAIChatOpen={isAIChatOpen}
           onNoteSelect={setSelectedNoteId}
         />
       </div>
-
-      {/* AI Chat Sidebar */}
-      <AIChatSidebar
-        isOpen={isAIChatOpen}
-        onClose={() => setIsAIChatOpen(false)}
-        noteId={selectedNoteId || undefined}
-        onNoteSelect={setSelectedNoteId}
-      />
-
-      {/* Import Dialog */}
-      <ImportDialog
-        open={isImportDialogOpen}
-        onOpenChange={setIsImportDialogOpen}
-        folderId={selectedFolderId}
-        onNoteCreated={setSelectedNoteId}
-      />
 
       {/* Shortcuts Modal */}
       <ShortcutsModal

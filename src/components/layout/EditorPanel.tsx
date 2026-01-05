@@ -1,36 +1,20 @@
-import { FileText, Sparkles } from 'lucide-react'
+import { FileText } from 'lucide-react'
 import { NoteEditor } from '@/components/editor/NoteEditor'
 import { NoteInfoSheet } from '@/components/editor/NoteInfoSheet'
-import { cn } from '@/lib/utils'
 
 interface EditorPanelProps {
   noteId: string | null
-  onAIChatToggle?: () => void
-  isAIChatOpen?: boolean
   onNoteSelect?: (noteId: string) => void
   isMobile?: boolean
 }
 
-export function EditorPanel({ noteId, onAIChatToggle, isAIChatOpen, onNoteSelect, isMobile = false }: EditorPanelProps) {
+export function EditorPanel({ noteId, onNoteSelect, isMobile = false }: EditorPanelProps) {
   if (!noteId) {
     return (
       <div className="h-full flex flex-col bg-background">
-        {/* Header with AI button */}
+        {/* Header */}
         {!isMobile && (
-          <div className="flex items-center justify-end px-4 py-2 border-b border-border">
-            <button
-              onClick={onAIChatToggle}
-              className={cn(
-                'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors',
-                isAIChatOpen
-                  ? 'bg-primary/10 text-primary'
-                  : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-              )}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>AI</span>
-            </button>
-          </div>
+          <div className="flex items-center justify-end px-4 py-2 border-b border-border h-[52px]" />
         )}
 
         <div className="flex-1 flex flex-col items-center justify-center text-muted-foreground">
@@ -44,22 +28,10 @@ export function EditorPanel({ noteId, onAIChatToggle, isAIChatOpen, onNoteSelect
 
   return (
     <div className="h-full bg-background flex flex-col">
-      {/* Header with Info and AI buttons - hide on mobile since header is in AppShell */}
+      {/* Header with Info button - hide on mobile since header is in AppShell */}
       {!isMobile && (
         <div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border">
           <NoteInfoSheet noteId={noteId} onNoteSelect={onNoteSelect} />
-          <button
-            onClick={onAIChatToggle}
-            className={cn(
-              'flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors',
-              isAIChatOpen
-                ? 'bg-primary/10 text-primary'
-                : 'bg-secondary text-muted-foreground hover:bg-secondary/80'
-            )}
-          >
-            <Sparkles className="w-4 h-4" />
-            <span>AI</span>
-          </button>
         </div>
       )}
 

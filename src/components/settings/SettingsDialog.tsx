@@ -1,4 +1,4 @@
-import { Moon, Sun, Monitor, Settings, Check } from 'lucide-react'
+import { Moon, Sun, Monitor, Settings, Check, Sparkles, Download, ExternalLink } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogBody } from '@/components/ui/dialog'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
@@ -15,6 +15,25 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
     { value: 'light' as const, label: 'Light', icon: Sun },
     { value: 'dark' as const, label: 'Dark', icon: Moon },
     { value: 'system' as const, label: 'System', icon: Monitor },
+  ]
+
+  const appLinks = [
+    {
+      name: 'Phillips AI',
+      description: 'Chat with your notes using AI',
+      icon: Sparkles,
+      href: '/ai.html',
+      color: 'text-violet-500',
+      bgColor: 'bg-violet-500/10',
+    },
+    {
+      name: 'Import Notes',
+      description: 'Import from YouTube, web, text',
+      icon: Download,
+      href: '/import.html',
+      color: 'text-emerald-500',
+      bgColor: 'bg-emerald-500/10',
+    },
   ]
 
   return (
@@ -61,6 +80,37 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                   )
                 })}
               </div>
+            </div>
+
+            {/* Apps Section */}
+            <div className="pt-4 border-t border-border">
+              <h3 className="text-sm font-medium text-muted-foreground mb-3">Apps</h3>
+              <div className="space-y-2">
+                {appLinks.map((app) => (
+                  <a
+                    key={app.name}
+                    href={app.href}
+                    className={cn(
+                      'flex items-center gap-3 p-3 rounded-lg transition-colors',
+                      'bg-secondary/50 hover:bg-secondary'
+                    )}
+                  >
+                    <div className={cn('p-2 rounded-lg', app.bgColor)}>
+                      <app.icon className={cn('h-5 w-5', app.color)} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="font-medium text-sm">{app.name}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {app.description}
+                      </div>
+                    </div>
+                    <ExternalLink className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                  </a>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground mt-3">
+                Save these apps to your home screen for quick access
+              </p>
             </div>
 
             {/* App Info Section */}

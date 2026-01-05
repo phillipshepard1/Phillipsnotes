@@ -1,11 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, FolderPlus, ChevronRight, Trash2, FileText, GripVertical, Check, Palette } from 'lucide-react'
+import { Folder, FolderPlus, ChevronRight, Trash2, FileText, GripVertical, Check, Palette, Settings } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 import { FolderColorPicker } from '@/components/ui/FolderColorPicker'
+import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { useFolders, useCreateFolder, useDeleteFolder, useUpdateFolder } from '@/hooks/useFolders'
 import { useNotes } from '@/hooks/useNotes'
 import { cn } from '@/lib/utils'
@@ -30,6 +31,7 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
   const [colorPickerFolder, setColorPickerFolder] = useState<FolderWithChildren | null>(null)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   // Calculate note counts per folder
   const noteCounts = useMemo(() => {
@@ -133,33 +135,41 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         {/* Action buttons row */}
-        <div className="flex items-center justify-end gap-1 h-11">
-          {isEditMode ? (
-            <button
-              onClick={() => {
-                setIsEditMode(false)
-                setSelectedFolderIds(new Set())
-              }}
-              className="text-primary font-medium text-[17px] px-2 py-1"
-            >
-              Done
-            </button>
-          ) : (
-            <>
+        <div className="flex items-center justify-between h-11">
+          <button
+            onClick={() => setIsSettingsOpen(true)}
+            className="flex h-9 w-9 items-center justify-center rounded-full text-primary active:bg-primary/10"
+          >
+            <Settings className="h-5 w-5" />
+          </button>
+          <div className="flex items-center gap-1">
+            {isEditMode ? (
               <button
-                onClick={() => setIsCreatingFolder(true)}
-                className="flex h-9 w-9 items-center justify-center rounded-full text-primary active:bg-primary/10"
-              >
-                <FolderPlus className="h-5 w-5" />
-              </button>
-              <button
-                onClick={() => setIsEditMode(true)}
+                onClick={() => {
+                  setIsEditMode(false)
+                  setSelectedFolderIds(new Set())
+                }}
                 className="text-primary font-medium text-[17px] px-2 py-1"
               >
-                Edit
+                Done
               </button>
-            </>
-          )}
+            ) : (
+              <>
+                <button
+                  onClick={() => setIsCreatingFolder(true)}
+                  className="flex h-9 w-9 items-center justify-center rounded-full text-primary active:bg-primary/10"
+                >
+                  <FolderPlus className="h-5 w-5" />
+                </button>
+                <button
+                  onClick={() => setIsEditMode(true)}
+                  className="text-primary font-medium text-[17px] px-2 py-1"
+                >
+                  Edit
+                </button>
+              </>
+            )}
+          </div>
         </div>
 
         {/* Large Title - tight spacing */}
@@ -303,6 +313,9 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Settings Dialog */}
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
     </div>
   )
 }
