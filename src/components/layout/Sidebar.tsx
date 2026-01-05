@@ -1,8 +1,8 @@
-import { LogOut, Search, Download, Tag } from 'lucide-react'
+import { LogOut, Search, Download, Tag, Settings } from 'lucide-react'
 import { useState } from 'react'
 import { FolderTree } from '@/components/folders/FolderTree'
-import { ThemeToggle } from '@/components/ui/ThemeToggle'
 import { TagManager } from '@/components/tags/TagManager'
+import { SettingsDialog } from '@/components/settings/SettingsDialog'
 import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
@@ -21,6 +21,7 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
   const { user, signOut } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const query = e.target.value
@@ -68,7 +69,8 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
           className={cn(
             'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm',
             'bg-background/80 text-foreground hover:bg-background transition-colors',
-            'border border-border'
+            'border border-border',
+            isMobile && 'min-h-[44px]'
           )}
         >
           <Tag className="w-4 h-4" />
@@ -79,16 +81,32 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
           className={cn(
             'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm',
             'bg-background/80 text-foreground hover:bg-background transition-colors',
-            'border border-border'
+            'border border-border',
+            isMobile && 'min-h-[44px]'
           )}
         >
           <Download className="w-4 h-4" />
           Import
         </button>
+        <button
+          onClick={() => setIsSettingsOpen(true)}
+          className={cn(
+            'w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm',
+            'bg-background/80 text-foreground hover:bg-background transition-colors',
+            'border border-border',
+            isMobile && 'min-h-[44px]'
+          )}
+        >
+          <Settings className="w-4 h-4" />
+          Settings
+        </button>
       </div>
 
       {/* Tag Manager Dialog */}
       <TagManager open={isTagManagerOpen} onOpenChange={setIsTagManagerOpen} />
+
+      {/* Settings Dialog */}
+      <SettingsDialog open={isSettingsOpen} onOpenChange={setIsSettingsOpen} />
 
       {/* User section */}
       <div className="p-3 border-t border-border">
@@ -96,21 +114,18 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
           <span className="text-xs text-muted-foreground truncate flex-1">
             {user?.email}
           </span>
-          <div className="flex items-center gap-1">
-            <ThemeToggle />
-            <button
-              onClick={signOut}
-              className={cn(
-                'rounded-md transition-colors',
-                isMobile
-                  ? 'h-11 w-11 flex items-center justify-center active:bg-secondary'
-                  : 'p-1.5 hover:bg-secondary'
-              )}
-              title="Sign out"
-            >
-              <LogOut className="h-4 w-4 text-muted-foreground" />
-            </button>
-          </div>
+          <button
+            onClick={signOut}
+            className={cn(
+              'rounded-md transition-colors',
+              isMobile
+                ? 'h-11 w-11 flex items-center justify-center active:bg-secondary'
+                : 'p-1.5 hover:bg-secondary'
+            )}
+            title="Sign out"
+          >
+            <LogOut className="h-4 w-4 text-muted-foreground" />
+          </button>
         </div>
       </div>
     </div>
