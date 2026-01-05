@@ -57,7 +57,15 @@ Deno.serve(async (req: Request) => {
             role: 'system',
             content: `You are a conversation parser. Your job is to take pasted text from AI conversations and structure it into a clean JSON format.
 
-Analyze the text and identify:
+FIRST: Determine if the text is actually an AI conversation or just plain text/article content.
+
+If the text is NOT a conversation (e.g., it's an article, documentation, research paper, or any content that doesn't show a back-and-forth between a user and an AI assistant), return:
+{
+  "error": "not_a_conversation",
+  "reason": "Brief explanation of why this doesn't appear to be a conversation"
+}
+
+If it IS a conversation, analyze the text and identify:
 1. The title/topic of the conversation (create a brief, descriptive title)
 2. Which AI service was used (chatgpt, claude, grok, gemini, deepseek, perplexity, or unknown)
 3. The individual messages, identifying who is the user and who is the AI assistant
@@ -85,6 +93,7 @@ Important:
 - Preserve formatting within messages (paragraphs, lists, code blocks)
 - Combine multi-paragraph messages into single messages
 - If you can't identify roles, treat the first message as user and alternate
+- For very long conversations, include ALL messages but you may summarize very long individual messages if needed
 - Return ONLY valid JSON, no markdown code fences or explanation`
           },
           {
@@ -93,7 +102,7 @@ Important:
           }
         ],
         temperature: 0.3,
-        max_tokens: 4000,
+        max_tokens: 16000,
       }),
     });
 
@@ -111,7 +120,7 @@ Important:
     }
 
     // Parse the JSON response
-    let parsed: FormattedConversation;
+    let parsed: FormattedConversation | { error: string; reason: string };
     try {
       // Remove potential markdown code fences
       const cleanedContent = content
@@ -124,13 +133,21 @@ Important:
       throw new Error('Failed to parse conversation structure');
     }
 
+    // Check if the AI determined this is not a conversation
+    if ('error' in parsed && parsed.error === 'not_a_conversation') {
+      throw new Error(`This doesn't appear to be an AI conversation. ${parsed.reason || 'Try unchecking "Format as AI conversation" to import as plain text.'}`);
+    }
+
     // Validate the structure
-    if (!parsed.title || !Array.isArray(parsed.messages)) {
+    if (!('title' in parsed) || !('messages' in parsed) || !Array.isArray(parsed.messages)) {
       throw new Error('Invalid conversation structure');
     }
 
+    // Now we know it's a valid conversation structure
+    const conversation = parsed as FormattedConversation;
+
     // Validate messages
-    const validMessages = parsed.messages.filter(
+    const validMessages = conversation.messages.filter(
       (msg): msg is Message =>
         msg &&
         typeof msg === 'object' &&
@@ -144,8 +161,8 @@ Important:
     }
 
     const result: FormattedConversation = {
-      title: parsed.title || 'Imported Conversation',
-      source: parsed.source || 'unknown',
+      title: conversation.title || 'Imported Conversation',
+      source: conversation.source || 'unknown',
       messages: validMessages,
     };
 

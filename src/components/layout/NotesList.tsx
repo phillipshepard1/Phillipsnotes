@@ -1,4 +1,4 @@
-import { Plus, Trash2 } from 'lucide-react'
+import { Plus, Trash2, Menu } from 'lucide-react'
 import { NotesListView } from '@/components/notes/NotesListView'
 import { useCreateNote, useEmptyTrash, useTrashNotes } from '@/hooks/useNotes'
 import { useFolder } from '@/hooks/useFolders'
@@ -12,6 +12,8 @@ interface NotesListProps {
   onNoteSelect: (id: string) => void
   searchQuery: string
   isTrashView?: boolean
+  isMobile?: boolean
+  onMenuClick?: () => void
 }
 
 export function NotesList({
@@ -20,6 +22,8 @@ export function NotesList({
   onNoteSelect,
   searchQuery,
   isTrashView = false,
+  isMobile = false,
+  onMenuClick,
 }: NotesListProps) {
   const createNote = useCreateNote()
   const emptyTrash = useEmptyTrash()
@@ -60,10 +64,21 @@ export function NotesList({
   return (
     <div className="h-full flex flex-col bg-background">
       {/* Header */}
-      <div className="p-3 border-b border-border">
-        <div className="flex items-center justify-between">
+      <div
+        className={cn('p-3 border-b border-border', isMobile && 'pt-[env(safe-area-inset-top)]')}
+      >
+        <div className="flex items-center justify-between gap-2">
+          {/* Mobile menu button */}
+          {isMobile && onMenuClick && (
+            <button
+              onClick={onMenuClick}
+              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
+            >
+              <Menu className="h-5 w-5" />
+            </button>
+          )}
           <h2 className={cn(
-            'font-semibold truncate',
+            'font-semibold truncate flex-1',
             isTrashView ? 'text-destructive' : 'text-foreground'
           )}>
             {headerTitle}
@@ -73,8 +88,8 @@ export function NotesList({
               <button
                 onClick={() => setShowEmptyTrashDialog(true)}
                 className={cn(
-                  'p-1.5 rounded-md transition-colors',
-                  'hover:bg-destructive/10 text-destructive',
+                  'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+                  'active:bg-destructive/10 text-destructive',
                   'disabled:opacity-50'
                 )}
                 title="Empty trash"
@@ -82,20 +97,20 @@ export function NotesList({
                 <Trash2 className="h-5 w-5" />
               </button>
             )
-          ) : (
+          ) : !isMobile ? (
             <button
               onClick={handleCreateNote}
               disabled={createNote.isPending}
               className={cn(
-                'p-1.5 rounded-md transition-colors',
-                'hover:bg-secondary',
+                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+                'hover:bg-secondary active:bg-secondary',
                 'disabled:opacity-50'
               )}
               title="New note"
             >
               <Plus className="h-5 w-5 text-muted-foreground" />
             </button>
-          )}
+          ) : null}
         </div>
       </div>
 

@@ -14,9 +14,10 @@ interface SidebarProps {
   searchInputRef?: React.RefObject<HTMLInputElement | null>
   isTrashSelected?: boolean
   onTrashSelect?: () => void
+  isMobile?: boolean
 }
 
-export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportClick, searchInputRef, isTrashSelected, onTrashSelect }: SidebarProps) {
+export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportClick, searchInputRef, isTrashSelected, onTrashSelect, isMobile = false }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false)
@@ -99,7 +100,12 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
             <ThemeToggle />
             <button
               onClick={signOut}
-              className="p-1.5 rounded-md hover:bg-secondary transition-colors"
+              className={cn(
+                'rounded-md transition-colors',
+                isMobile
+                  ? 'h-11 w-11 flex items-center justify-center active:bg-secondary'
+                  : 'p-1.5 hover:bg-secondary'
+              )}
               title="Sign out"
             >
               <LogOut className="h-4 w-4 text-muted-foreground" />

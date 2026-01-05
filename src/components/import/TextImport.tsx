@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, MessageSquare } from 'lucide-react'
+import { Download, MessageSquare, AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface TextImportProps {
@@ -29,6 +29,8 @@ export function TextImport({ onImport, disabled }: TextImportProps) {
 
   const hasContent = text.trim().length > 0
   const wordCount = text.trim() ? text.trim().split(/\s+/).length : 0
+  const isLongText = wordCount > 3000
+  const showLongTextWarning = isLongText && formatAsChat
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
@@ -57,6 +59,18 @@ export function TextImport({ onImport, disabled }: TextImportProps) {
           </p>
         )}
       </div>
+
+      {showLongTextWarning && (
+        <div className="flex items-start gap-2 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+          <div className="text-sm">
+            <p className="font-medium text-amber-800">Long text detected</p>
+            <p className="text-amber-700 mt-0.5">
+              This text is very long ({wordCount.toLocaleString()} words). If it&apos;s an article rather than a conversation, consider unchecking &quot;Format as AI conversation&quot; to import as plain text.
+            </p>
+          </div>
+        </div>
+      )}
 
       <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
         <input

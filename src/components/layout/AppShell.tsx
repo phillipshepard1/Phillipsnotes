@@ -1,13 +1,18 @@
 import { useState, useCallback, useRef } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { ArrowLeft } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { NotesList } from './NotesList'
 import { EditorPanel } from './EditorPanel'
+import { MobileNav } from './MobileNav'
+import { MobileDrawer } from './MobileDrawer'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useCreateNote } from '@/hooks/useNotes'
+import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
 
 export function AppShell() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
@@ -22,11 +27,17 @@ export function AppShell() {
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createNote = useCreateNote()
 
+  const isMobile = useIsMobile()
+  const { activeView, navigateTo, goBack, goToList, goToEditor } = useMobileNavigation()
+
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolderId(folderId)
     setSelectedNoteId(null)
     setSearchQuery('')
     setIsTrashView(false)
+    if (isMobile) {
+      goToList()
+    }
   }
 
   const handleTrashSelect = () => {
@@ -34,12 +45,22 @@ export function AppShell() {
     setSelectedFolderId(null)
     setSelectedNoteId(null)
     setSearchQuery('')
+    if (isMobile) {
+      goToList()
+    }
   }
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
     if (query) {
       setSelectedFolderId(null)
+    }
+  }
+
+  const handleNoteSelect = (noteId: string | null) => {
+    setSelectedNoteId(noteId)
+    if (noteId && isMobile) {
+      goToEditor()
     }
   }
 
@@ -50,10 +71,13 @@ export function AppShell() {
         title: '',
       })
       setSelectedNoteId(note.id)
+      if (isMobile) {
+        goToEditor()
+      }
     } catch (error) {
       console.error('Failed to create note:', error)
     }
-  }, [createNote, selectedFolderId])
+  }, [createNote, selectedFolderId, isMobile, goToEditor])
 
   const handleFocusSearch = useCallback(() => {
     searchInputRef.current?.focus()
@@ -89,6 +113,131 @@ export function AppShell() {
     ],
   })
 
+  // Mobile Layout
+  if (isMobile) {
+    return (
+      <div className="h-screen w-screen overflow-hidden bg-background">
+        {/* Mobile Content Area */}
+        <div
+          className="h-full overflow-hidden"
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+        >
+          <AnimatePresence mode="wait">
+            {activeView === 'list' && (
+              <motion.div
+                key="list"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.15 }}
+                className="h-full"
+              >
+                <NotesList
+                  folderId={selectedFolderId}
+                  selectedNoteId={selectedNoteId}
+                  onNoteSelect={handleNoteSelect}
+                  searchQuery={searchQuery}
+                  isTrashView={isTrashView}
+                  isMobile={true}
+                  onMenuClick={() => navigateTo('sidebar')}
+                />
+              </motion.div>
+            )}
+
+            {activeView === 'editor' && (
+              <motion.div
+                key="editor"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.15 }}
+                className="h-full"
+              >
+                {/* Mobile Editor Header */}
+                <div
+                  className="flex h-14 items-center gap-2 border-b border-border px-2"
+                  style={{ paddingTop: 'env(safe-area-inset-top)' }}
+                >
+                  <button
+                    onClick={goBack}
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
+                  >
+                    <ArrowLeft className="h-5 w-5" />
+                  </button>
+                  <span className="text-sm font-medium text-muted-foreground">Back to Notes</span>
+                </div>
+                <div className="h-[calc(100%-3.5rem)]">
+                  <EditorPanel
+                    noteId={selectedNoteId}
+                    onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
+                    isAIChatOpen={isAIChatOpen}
+                    onNoteSelect={setSelectedNoteId}
+                    isMobile={true}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        {/* Mobile Sidebar Drawer */}
+        <MobileDrawer
+          isOpen={activeView === 'sidebar'}
+          onClose={goToList}
+          title="Folders"
+        >
+          <Sidebar
+            selectedFolderId={selectedFolderId}
+            onFolderSelect={handleFolderSelect}
+            onSearch={handleSearch}
+            onImportClick={() => setIsImportDialogOpen(true)}
+            searchInputRef={searchInputRef}
+            isTrashSelected={isTrashView}
+            onTrashSelect={handleTrashSelect}
+            isMobile={true}
+          />
+        </MobileDrawer>
+
+        {/* Mobile Bottom Navigation */}
+        <MobileNav
+          activeView={activeView}
+          onNavigate={navigateTo}
+          onCreateNote={handleCreateNote}
+          hasSelectedNote={!!selectedNoteId}
+        />
+
+        {/* AI Chat Sidebar */}
+        <AIChatSidebar
+          isOpen={isAIChatOpen}
+          onClose={() => setIsAIChatOpen(false)}
+          noteId={selectedNoteId || undefined}
+          onNoteSelect={setSelectedNoteId}
+        />
+
+        {/* Import Dialog */}
+        <ImportDialog
+          open={isImportDialogOpen}
+          onOpenChange={setIsImportDialogOpen}
+          folderId={selectedFolderId}
+          onNoteCreated={setSelectedNoteId}
+        />
+
+        {/* Shortcuts Modal */}
+        <ShortcutsModal
+          open={isShortcutsModalOpen}
+          onOpenChange={setIsShortcutsModalOpen}
+        />
+
+        {/* Save Feedback Toast */}
+        <SaveFeedback
+          show={showSaveFeedback}
+          onHide={() => setShowSaveFeedback(false)}
+        />
+      </div>
+    )
+  }
+
+  // Desktop Layout (unchanged)
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-background">
       {/* Sidebar - fixed width */}
@@ -109,7 +258,7 @@ export function AppShell() {
         <NotesList
           folderId={selectedFolderId}
           selectedNoteId={selectedNoteId}
-          onNoteSelect={setSelectedNoteId}
+          onNoteSelect={handleNoteSelect}
           searchQuery={searchQuery}
           isTrashView={isTrashView}
         />
