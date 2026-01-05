@@ -49,7 +49,7 @@ export function MoveNoteDialog({
         </DialogHeader>
         <DialogBody>
           <p className="text-sm text-gray-500 mb-4">
-            Move "<span className="font-medium text-gray-700">{noteTitle || 'Untitled'}</span>" to:
+            Move "<span className="font-medium text-gray-700">{noteTitle || 'New Note'}</span>" to:
           </p>
           <ScrollArea className="h-64 border border-gray-200 rounded-lg">
             <div className="p-2">

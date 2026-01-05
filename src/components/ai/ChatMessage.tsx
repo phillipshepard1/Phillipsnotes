@@ -77,7 +77,7 @@ export function ChatMessage({
                 >
                   <FileText className="w-3 h-3" />
                   <span className="truncate max-w-[150px]">
-                    {source.title || 'Untitled'}
+                    {source.title || 'New Note'}
                   </span>
                 </button>
               ))}

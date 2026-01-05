@@ -70,7 +70,7 @@ export function NotesListView({
   if (isTrashView) {
     return (
       <ScrollArea className="h-full">
-        <div className="p-2 space-y-1">
+        <div className="px-4 py-3 space-y-2">
           {notes.map((note) => (
             <TrashNoteCard
               key={note.id}
@@ -88,17 +88,17 @@ export function NotesListView({
 
   return (
     <ScrollArea className="h-full">
-      <div className="p-2 space-y-4">
+      <div className="px-4 py-3 space-y-6">
         {GROUP_ORDER.map((group) => {
           const groupNotes = grouped[group]
           if (groupNotes.length === 0) return null
 
           return (
             <div key={group}>
-              <h3 className="text-xs font-medium text-muted-foreground uppercase tracking-wider px-3 mb-2">
+              <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">
                 {DATE_GROUP_LABELS[group]}
               </h3>
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {groupNotes.map((note) => (
                   <NoteCard
                     key={note.id}

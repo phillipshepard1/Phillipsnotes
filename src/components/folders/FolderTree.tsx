@@ -50,7 +50,7 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
         <button
           onClick={() => onFolderSelect(undefined)}
           className={cn(
-            'flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-colors',
+            'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[15px] transition-colors',
             'hover:bg-secondary',
             selectedFolderId === undefined && !isTrashSelected && 'bg-primary/10 text-primary'
           )}
@@ -98,7 +98,7 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
         ) : (
           <button
             onClick={() => setIsCreating(true)}
-            className="flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[15px] text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
           >
             <Plus className="h-4 w-4" />
             <span>New Folder</span>
@@ -113,7 +113,7 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
           <button
             onClick={onTrashSelect}
             className={cn(
-              'flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-colors',
+              'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[15px] transition-colors',
               'hover:bg-secondary',
               isTrashSelected && 'bg-destructive/10 text-destructive'
             )}
@@ -175,11 +175,11 @@ function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div
           className={cn(
-            'flex items-center gap-1 rounded-md text-sm transition-colors group',
+            'flex items-center gap-1 rounded-lg text-[15px] transition-colors group',
             'hover:bg-secondary',
             isSelected && 'bg-primary/10 text-primary'
           )}
-          style={{ paddingLeft: `${level * 12 + 8}px` }}
+          style={{ paddingLeft: `${level * 12 + 12}px` }}
         >
           {hasChildren ? (
             <CollapsibleTrigger asChild>
@@ -215,7 +215,7 @@ function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
           ) : (
             <button
               onClick={() => onSelect(folder.id)}
-              className="flex items-center gap-2 flex-1 py-1.5"
+              className="flex items-center gap-2 flex-1 py-2"
             >
               {isSelected || isOpen ? (
                 <FolderOpen className="h-4 w-4" />

@@ -41,32 +41,33 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
       <div
         onClick={onClick}
         className={cn(
-          'w-full text-left px-3 py-2.5 rounded-lg transition-colors cursor-pointer',
-          'border border-transparent',
-          'hover:bg-secondary group',
-          isSelected && 'bg-destructive/10 border-destructive/20'
+          'w-full text-left px-4 py-3.5 rounded-xl transition-colors cursor-pointer',
+          'border border-border/50 bg-card',
+          'hover:bg-accent/50 group',
+          isSelected && 'bg-destructive/10 border-destructive/30'
         )}
       >
-        <div className="flex items-start justify-between gap-2">
+        {/* Title row with date */}
+        <div className="flex items-center justify-between gap-3">
           <h3 className={cn(
-            'text-sm font-medium truncate flex-1',
+            'text-[17px] font-semibold truncate flex-1',
             !note.title && 'text-muted-foreground italic'
           )}>
-            {note.title || 'Untitled'}
+            {note.title || 'New Note'}
           </h3>
           <div className="flex items-center gap-1 flex-shrink-0">
-            <span className="text-xs text-muted-foreground">{formattedDate}</span>
+            <span className="text-sm text-muted-foreground">{formattedDate}</span>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <button
                   className={cn(
-                    'p-1 rounded hover:bg-accent transition-colors',
+                    'p-1.5 rounded-lg hover:bg-accent transition-colors',
                     'opacity-0 group-hover:opacity-100',
                     isSelected && 'opacity-100'
                   )}
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <MoreHorizontal className="h-4 w-4 text-muted-foreground" />
+                  <MoreHorizontal className="h-5 w-5 text-muted-foreground" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
@@ -86,8 +87,9 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
             </DropdownMenu>
           </div>
         </div>
+        {/* Preview text */}
         {note.preview && (
-          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
+          <p className="text-[15px] text-muted-foreground mt-1.5 line-clamp-2 leading-snug">
             {note.preview}
           </p>
         )}
@@ -97,7 +99,7 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
         open={showDeleteDialog}
         onOpenChange={setShowDeleteDialog}
         title="Delete Forever"
-        description={`Are you sure you want to permanently delete "${note.title || 'Untitled'}"? This action cannot be undone.`}
+        description={`Are you sure you want to permanently delete "${note.title || 'New Note'}"? This action cannot be undone.`}
         confirmLabel="Delete Forever"
         variant="destructive"
         onConfirm={handlePermanentDelete}

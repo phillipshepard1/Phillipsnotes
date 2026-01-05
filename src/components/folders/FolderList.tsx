@@ -301,7 +301,7 @@ function FolderItem({
     <button
       onClick={isEditMode ? onSelect : onClick}
       className={cn(
-        'flex items-center w-full px-4 py-3 text-left transition-colors',
+        'flex items-center w-full px-4 py-3.5 text-left transition-colors',
         'active:bg-accent',
         showDivider && 'border-b border-border'
       )}
@@ -333,11 +333,11 @@ function FolderItem({
       <div className="flex-shrink-0 mr-3">{icon}</div>
 
       {/* Folder Name */}
-      <span className="flex-1 text-base text-foreground truncate">{name}</span>
+      <span className="flex-1 text-[17px] text-foreground truncate">{name}</span>
 
       {/* Note Count */}
       {count !== undefined && (
-        <span className="text-muted-foreground text-base mr-2">{count}</span>
+        <span className="text-muted-foreground text-[17px] mr-2">{count}</span>
       )}
 
       {/* Chevron (non-edit mode only) */}

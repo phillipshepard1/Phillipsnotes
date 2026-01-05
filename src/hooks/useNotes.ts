@@ -7,7 +7,7 @@ import { extractTextPreview } from '@/lib/utils'
 function toNotePreview(note: Note): NotePreview {
   return {
     id: note.id,
-    title: note.title || 'Untitled',
+    title: note.title || 'New Note',
     preview: note.content_text || extractTextPreview(note.content as unknown[], 100),
     updated_at: note.updated_at,
     is_pinned: note.is_pinned,

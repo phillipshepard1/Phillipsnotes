@@ -1,28 +1,29 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useMemo } from 'react'
 import { useDebounce } from './useDebounce'
 import { useUpdateNote } from './useNotes'
 import { useEmbedNote } from './useAI'
+import { extractFirstLine } from '@/lib/utils'
 
 export function useAutoSave(
   noteId: string | null,
   content: unknown[] | null,
-  title: string,
   /** The original content from the database - used as baseline to detect actual changes */
-  originalContent?: unknown[] | null,
-  /** The original title from the database */
-  originalTitle?: string
+  originalContent?: unknown[] | null
 ) {
   const updateNote = useUpdateNote()
   const { embedNote } = useEmbedNote()
   const debouncedContent = useDebounce(content, 500)
-  const debouncedTitle = useDebounce(title, 500)
   // Longer debounce for embeddings to avoid too many API calls
   const debouncedForEmbedding = useDebounce(content, 3000)
   const isInitialized = useRef(false)
   const lastSavedContent = useRef<string | null>(null)
-  const lastSavedTitle = useRef<string | null>(null)
   const lastEmbeddedContent = useRef<string | null>(null)
   const embedTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+
+  // Derive title from first line of content
+  const derivedTitle = useMemo(() => {
+    return extractFirstLine(debouncedContent || [])
+  }, [debouncedContent])
 
   // Trigger embedding after content stabilizes
   const triggerEmbedding = useCallback(async (id: string) => {
@@ -36,13 +37,12 @@ export function useAutoSave(
 
   // Initialize baseline from original DB content once it's available
   useEffect(() => {
-    if (originalContent !== undefined && originalTitle !== undefined && !isInitialized.current) {
+    if (originalContent !== undefined && !isInitialized.current) {
       lastSavedContent.current = JSON.stringify(originalContent)
-      lastSavedTitle.current = originalTitle
       lastEmbeddedContent.current = JSON.stringify(originalContent)
       isInitialized.current = true
     }
-  }, [originalContent, originalTitle])
+  }, [originalContent])
 
   useEffect(() => {
     // Don't save until we've initialized with the DB content
@@ -51,26 +51,19 @@ export function useAutoSave(
 
     const contentStr = JSON.stringify(debouncedContent)
     const contentChanged = contentStr !== lastSavedContent.current
-    const titleChanged = debouncedTitle !== lastSavedTitle.current
 
-    if (contentChanged || titleChanged) {
-      const updates: { content?: unknown[]; title?: string } = {}
-
-      if (contentChanged && debouncedContent) {
-        updates.content = debouncedContent
-        lastSavedContent.current = contentStr
-      }
-
-      if (titleChanged) {
-        updates.title = debouncedTitle
-        lastSavedTitle.current = debouncedTitle
-      }
-
-      if (Object.keys(updates).length > 0) {
-        updateNote.mutate({ id: noteId, updates })
-      }
+    if (contentChanged && debouncedContent) {
+      lastSavedContent.current = contentStr
+      // Save both content and derived title (from first line)
+      updateNote.mutate({
+        id: noteId,
+        updates: {
+          content: debouncedContent,
+          title: derivedTitle
+        }
+      })
     }
-  }, [debouncedContent, debouncedTitle, noteId, updateNote])
+  }, [debouncedContent, derivedTitle, noteId, updateNote])
 
   // Separate effect for embeddings with longer debounce
   useEffect(() => {
@@ -105,7 +98,6 @@ export function useAutoSave(
   useEffect(() => {
     isInitialized.current = false
     lastSavedContent.current = null
-    lastSavedTitle.current = null
     lastEmbeddedContent.current = null
   }, [noteId])
 

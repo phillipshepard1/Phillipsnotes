@@ -13,7 +13,7 @@ export function LargeTitle({ title, subtitle, className }: LargeTitleProps) {
         {title}
       </h1>
       {subtitle && (
-        <p className="mt-0.5 text-base text-muted-foreground">
+        <p className="mt-1 text-[17px] text-muted-foreground">
           {subtitle}
         </p>
       )}

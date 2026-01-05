@@ -12,7 +12,7 @@ export async function blocksToMarkdown(
 // Create a downloadable markdown file
 export function downloadMarkdown(content: string, title: string): void {
   // Sanitize filename
-  const filename = sanitizeFilename(title || 'Untitled') + '.md'
+  const filename = sanitizeFilename(title || 'New Note') + '.md'
 
   const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
   const url = URL.createObjectURL(blob)

@@ -83,7 +83,7 @@ export function RelatedNotes({ noteId, onNoteClick }: RelatedNotesProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="text-sm font-medium truncate">
-                        {note.title || 'Untitled'}
+                        {note.title || 'New Note'}
                       </span>
                       <span className="text-xs text-muted-foreground flex-shrink-0">
                         {Math.round(note.similarity * 100)}%

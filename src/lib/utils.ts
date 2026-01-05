@@ -6,6 +6,35 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
+ * Extract first line of text from BlockNote content to use as title
+ */
+export function extractFirstLine(content: unknown[], maxLength = 100): string {
+  if (!Array.isArray(content) || content.length === 0) return 'New Note'
+
+  const firstBlock = content[0] as Record<string, unknown> | null
+  if (!firstBlock || typeof firstBlock !== 'object') return 'New Note'
+
+  // Extract text from the first block's content array
+  const blockContent = firstBlock.content
+  if (!Array.isArray(blockContent)) return 'New Note'
+
+  const textParts: string[] = []
+  for (const item of blockContent) {
+    if (typeof item === 'object' && item !== null) {
+      const i = item as Record<string, unknown>
+      if (typeof i.text === 'string') {
+        textParts.push(i.text)
+      }
+    }
+  }
+
+  const text = textParts.join('').trim()
+  if (!text) return 'New Note'
+
+  return text.length > maxLength ? text.slice(0, maxLength) : text
+}
+
+/**
  * Extract plain text preview from BlockNote content
  */
 export function extractTextPreview(content: unknown[], maxLength = 100): string {
