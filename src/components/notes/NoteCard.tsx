@@ -25,7 +25,6 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   const formattedDate = formatNoteDate(note.updated_at)
   const [showMoveDialog, setShowMoveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [isMouseDown, setIsMouseDown] = useState(false)
   const deleteNote = useDeleteNote()
   const togglePin = useTogglePinNote()
 
@@ -65,7 +64,6 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
     // Only enable on desktop and if drag context is available
     if (isMobile || !drag) return
 
-    setIsMouseDown(true)
     startPosition.current = { x: e.clientX, y: e.clientY }
     isLongPressing.current = false
 
@@ -76,7 +74,6 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   }, [isMobile, drag, note])
 
   const handleMouseUp = useCallback(() => {
-    setIsMouseDown(false)
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
@@ -86,7 +83,6 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   }, [])
 
   const handleMouseLeave = useCallback(() => {
-    setIsMouseDown(false)
     if (longPressTimer.current) {
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
@@ -137,7 +133,7 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
 
   return (
     <>
-      <SwipeableCard disabled={isMouseDown || isAnyDragging || isInDragCooldown} onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
+      <SwipeableCard disabled={isAnyDragging || isInDragCooldown} onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
         <div
           onClick={handleClick}
           onMouseDown={handleMouseDown}
