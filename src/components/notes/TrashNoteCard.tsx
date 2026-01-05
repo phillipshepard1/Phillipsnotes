@@ -3,6 +3,7 @@ import { MoreHorizontal, Trash2, RotateCcw } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { SwipeableCard } from '@/components/ui/SwipeableCard'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useRestoreNote, usePermanentlyDeleteNote } from '@/hooks/useNotes'
 import type { NotePreview } from '@/lib/types'
@@ -36,17 +37,22 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
     }
   }
 
+  const handleSwipeDelete = () => {
+    setShowDeleteDialog(true)
+  }
+
   return (
     <>
-      <div
-        onClick={onClick}
-        className={cn(
-          'w-full text-left px-4 py-3.5 rounded-xl transition-colors cursor-pointer',
-          'border border-border/50 bg-card',
-          'hover:bg-accent/50 group',
-          isSelected && 'bg-destructive/10 border-destructive/30'
-        )}
-      >
+      <SwipeableCard onDelete={handleSwipeDelete} deleteLabel="Delete">
+        <div
+          onClick={onClick}
+          className={cn(
+            'w-full text-left px-4 py-3.5 transition-colors cursor-pointer',
+            'border border-border/50',
+            'hover:bg-accent/50 group',
+            isSelected && 'bg-destructive/10 border-destructive/30'
+          )}
+        >
         {/* Title row with date */}
         <div className="flex items-center justify-between gap-3">
           <h3 className={cn(
@@ -93,7 +99,8 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
             {note.preview}
           </p>
         )}
-      </div>
+        </div>
+      </SwipeableCard>
 
       <ConfirmDialog
         open={showDeleteDialog}

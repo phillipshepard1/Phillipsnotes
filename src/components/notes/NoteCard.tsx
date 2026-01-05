@@ -3,6 +3,7 @@ import { Pin, MoreHorizontal, FolderInput, Trash2, Pin as PinIcon } from 'lucide
 import { format, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { SwipeableCard } from '@/components/ui/SwipeableCard'
 import { MoveNoteDialog } from './MoveNoteDialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useDeleteNote, useTogglePinNote } from '@/hooks/useNotes'
@@ -30,6 +31,14 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
     }
   }
 
+  const handleSwipeDelete = async () => {
+    try {
+      await deleteNote.mutateAsync(note.id)
+    } catch (error) {
+      console.error('Failed to delete note:', error)
+    }
+  }
+
   const handleTogglePin = async () => {
     try {
       await togglePin.mutateAsync({ noteId: note.id, isPinned: !note.is_pinned })
@@ -40,15 +49,16 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
 
   return (
     <>
-      <div
-        onClick={onClick}
-        className={cn(
-          'w-full text-left px-4 py-3.5 rounded-xl transition-colors cursor-pointer',
-          'border border-border/50 bg-card',
-          'hover:bg-accent/50 group',
-          isSelected && 'bg-primary/10 border-primary/30'
-        )}
-      >
+      <SwipeableCard onDelete={handleSwipeDelete} deleteLabel="Trash">
+        <div
+          onClick={onClick}
+          className={cn(
+            'w-full text-left px-4 py-3.5 transition-colors cursor-pointer',
+            'border border-border/50',
+            'hover:bg-accent/50 group',
+            isSelected && 'bg-primary/10 border-primary/30'
+          )}
+        >
         {/* Title row with date */}
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -104,7 +114,8 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
             {note.preview}
           </p>
         )}
-      </div>
+        </div>
+      </SwipeableCard>
 
       <MoveNoteDialog
         open={showMoveDialog}
