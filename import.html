@@ -21,6 +21,17 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-import-192.png" />
 
     <title>Import Notes</title>
+    <script>
+      // Apply theme immediately to prevent flash
+      (function() {
+        var theme = localStorage.getItem('phillips-notes-theme') || 'light';
+        var resolved = theme;
+        if (theme === 'system') {
+          resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        document.documentElement.classList.add(resolved);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
