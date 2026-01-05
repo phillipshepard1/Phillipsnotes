@@ -8,6 +8,7 @@ import { MobileToolbar } from './MobileToolbar'
 import { FolderList } from '@/components/folders/FolderList'
 import { CircularButton } from '@/components/ui/CircularButton'
 import { EdgeSwipeBack } from '@/components/ui/EdgeSwipeBack'
+import { NoteInfoSheet } from '@/components/editor/NoteInfoSheet'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
@@ -343,18 +344,30 @@ export function AppShell() {
                   <div className="h-full flex flex-col">
                     {/* Mobile Editor Header - fixed */}
                     <div
-                      className="flex-shrink-0 flex items-center gap-2 border-b border-border px-2"
+                      className="flex-shrink-0 flex items-center justify-between border-b border-border px-2"
                       style={{
                         paddingTop: 'env(safe-area-inset-top)',
                         minHeight: 'calc(3.5rem + env(safe-area-inset-top))',
                       }}
                     >
-                      <CircularButton onClick={goBack} size="md">
-                        <ArrowLeft className="h-5 w-5" />
-                      </CircularButton>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        Back to Notes
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <CircularButton onClick={goBack} size="md">
+                          <ArrowLeft className="h-5 w-5" />
+                        </CircularButton>
+                        <span className="text-sm font-medium text-muted-foreground">
+                          Notes
+                        </span>
+                      </div>
+                      {/* Info button */}
+                      {selectedNoteId && (
+                        <NoteInfoSheet
+                          noteId={selectedNoteId}
+                          onNoteSelect={(id) => {
+                            setSelectedNoteId(id)
+                          }}
+                          isMobile={true}
+                        />
+                      )}
                     </div>
                     {/* Editor content - scrollable */}
                     <div className="flex-1 min-h-0 overflow-hidden">

@@ -1,5 +1,6 @@
 import { FileText, Sparkles } from 'lucide-react'
 import { NoteEditor } from '@/components/editor/NoteEditor'
+import { NoteInfoSheet } from '@/components/editor/NoteInfoSheet'
 import { cn } from '@/lib/utils'
 
 interface EditorPanelProps {
@@ -43,9 +44,10 @@ export function EditorPanel({ noteId, onAIChatToggle, isAIChatOpen, onNoteSelect
 
   return (
     <div className="h-full bg-background flex flex-col">
-      {/* Header with AI button - hide on mobile since header is in AppShell */}
+      {/* Header with Info and AI buttons - hide on mobile since header is in AppShell */}
       {!isMobile && (
-        <div className="flex items-center justify-end px-4 py-2 border-b border-border">
+        <div className="flex items-center justify-end gap-2 px-4 py-2 border-b border-border">
+          <NoteInfoSheet noteId={noteId} onNoteSelect={onNoteSelect} />
           <button
             onClick={onAIChatToggle}
             className={cn(
@@ -62,7 +64,7 @@ export function EditorPanel({ noteId, onAIChatToggle, isAIChatOpen, onNoteSelect
       )}
 
       <div className="flex-1 overflow-hidden">
-        <NoteEditor noteId={noteId} onNoteSelect={onNoteSelect} />
+        <NoteEditor noteId={noteId} />
       </div>
     </div>
   )
