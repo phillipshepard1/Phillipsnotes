@@ -4,7 +4,7 @@ const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1024
 
 // New: Apple Notes-style navigation views
-export type MobileView = 'folders' | 'notes' | 'editor'
+export type MobileView = 'folders' | 'notes' | 'editor' | 'search'
 
 // Legacy type for backwards compatibility during transition
 export type LegacyMobileView = 'sidebar' | 'list' | 'editor'

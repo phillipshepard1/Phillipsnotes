@@ -11,6 +11,8 @@ interface MobileToolbarProps {
   isListening?: boolean
   onStartListening?: () => void
   onStopListening?: () => void
+  onSearchFocus?: () => void
+  onSearchBlur?: () => void
 }
 
 export function MobileToolbar({
@@ -20,9 +22,24 @@ export function MobileToolbar({
   isListening = false,
   onStartListening,
   onStopListening,
+  onSearchFocus,
+  onSearchBlur,
 }: MobileToolbarProps) {
   const [isSearchFocused, setIsSearchFocused] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  const handleFocus = () => {
+    setIsSearchFocused(true)
+    onSearchFocus?.()
+  }
+
+  const handleBlur = () => {
+    setIsSearchFocused(false)
+    // Only call onSearchBlur if there's no query (user cancelled)
+    if (!searchQuery) {
+      onSearchBlur?.()
+    }
+  }
 
   const handleMicClick = () => {
     if (isListening) {
@@ -59,8 +76,8 @@ export function MobileToolbar({
             type="text"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            onFocus={() => setIsSearchFocused(true)}
-            onBlur={() => setIsSearchFocused(false)}
+            onFocus={handleFocus}
+            onBlur={handleBlur}
             placeholder="Search"
             className={cn(
               'h-10 w-full bg-transparent pl-9 pr-16 text-sm text-foreground',

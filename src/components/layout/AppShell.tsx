@@ -13,7 +13,8 @@ import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { useCreateNote, useNotes } from '@/hooks/useNotes'
+import { useCreateNote, useNotes, useSearchNotes } from '@/hooks/useNotes'
+import { NotesListView } from '@/components/notes/NotesListView'
 import { useFolders } from '@/hooks/useFolders'
 import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
@@ -32,7 +33,8 @@ export function AppShell() {
   const createNote = useCreateNote()
 
   const isMobile = useIsMobile()
-  const { activeView, goBack, goToNotes, goToEditor } = useMobileNavigation()
+  const { activeView, goBack, goToNotes, goToEditor, navigateTo, resetTo } = useMobileNavigation()
+  const [previousView, setPreviousView] = useState<'folders' | 'notes'>('folders')
 
   // Get folder name for header
   const { data: folders } = useFolders()
@@ -42,6 +44,10 @@ export function AppShell() {
   // Get note count for header
   const { data: notes } = useNotes(selectedFolderId)
   const noteCount = notes?.length || 0
+
+  // Search results
+  const { data: searchResults } = useSearchNotes(searchQuery)
+  const searchResultCount = searchResults?.length || 0
 
   // Speech recognition for voice search
   const { isListening, startListening, stopListening } = useSpeechRecognition({
@@ -74,6 +80,25 @@ export function AppShell() {
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
+    // Navigate to search view when query is entered
+    if (query && isMobile && activeView !== 'search') {
+      setPreviousView(activeView === 'notes' ? 'notes' : 'folders')
+      navigateTo('search')
+    }
+  }
+
+  const handleSearchFocus = () => {
+    if (isMobile && activeView !== 'search') {
+      setPreviousView(activeView === 'notes' ? 'notes' : 'folders')
+      navigateTo('search')
+    }
+  }
+
+  const handleClearSearch = () => {
+    setSearchQuery('')
+    if (isMobile) {
+      resetTo(previousView)
+    }
   }
 
   const handleNoteSelect = (noteId: string | null) => {
@@ -207,6 +232,53 @@ export function AppShell() {
               </motion.div>
             )}
 
+            {/* Search View */}
+            {activeView === 'search' && (
+              <motion.div
+                key="search"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 20 }}
+                transition={{ duration: 0.15 }}
+                className="h-full flex flex-col"
+              >
+                {/* Search Header */}
+                <div
+                  className="flex items-center justify-between px-2"
+                  style={{
+                    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                    minHeight: 'calc(44px + env(safe-area-inset-top))',
+                  }}
+                >
+                  <CircularButton onClick={handleClearSearch} size="md">
+                    <ArrowLeft className="h-5 w-5" />
+                  </CircularButton>
+                </div>
+
+                {/* Large Title */}
+                <LargeTitle
+                  title="Search"
+                  subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
+                  className="mb-2"
+                />
+
+                {/* Search Results */}
+                <div className="flex-1 overflow-hidden">
+                  {searchQuery.length >= 2 ? (
+                    <NotesListView
+                      searchQuery={searchQuery}
+                      selectedNoteId={selectedNoteId}
+                      onNoteSelect={handleNoteSelect}
+                    />
+                  ) : (
+                    <div className="flex items-center justify-center h-full text-muted-foreground">
+                      <p>Enter at least 2 characters to search</p>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            )}
+
             {/* Editor View */}
             {activeView === 'editor' && (
               <motion.div
@@ -254,6 +326,7 @@ export function AppShell() {
           isListening={isListening}
           onStartListening={startListening}
           onStopListening={stopListening}
+          onSearchFocus={handleSearchFocus}
         />
 
         {/* AI Chat Sidebar */}
