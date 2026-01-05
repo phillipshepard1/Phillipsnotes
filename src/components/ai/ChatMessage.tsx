@@ -1,5 +1,5 @@
 import { cn } from '@/lib/utils'
-import { User, Bot, FileText } from 'lucide-react'
+import { User, Sparkles, FileText } from 'lucide-react'
 
 interface Source {
   noteId: string
@@ -32,7 +32,7 @@ export function ChatMessage({
           isUser ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'
         )}
       >
-        {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+        {isUser ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4" />}
       </div>
 
       {/* Content */}

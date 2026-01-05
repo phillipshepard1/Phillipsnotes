@@ -10,6 +10,7 @@ interface ChatInputProps {
 
 export function ChatInput({ onSend, disabled, placeholder = 'Ask about your notes...' }: ChatInputProps) {
   const [value, setValue] = useState('')
+  const [isFocused, setIsFocused] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-resize textarea
@@ -37,29 +38,41 @@ export function ChatInput({ onSend, disabled, placeholder = 'Ask about your note
   }
 
   return (
-    <div className="border-t border-border p-3 bg-card">
+    <div className="border-t border-border/50 p-3 bg-background/80 backdrop-blur-xl">
       <div className="flex items-end gap-2">
-        <textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e) => setValue(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          disabled={disabled}
-          rows={1}
+        <div
           className={cn(
-            'flex-1 resize-none rounded-lg border border-border px-3 py-2 text-sm bg-background text-foreground',
-            'focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent',
-            'placeholder:text-muted-foreground disabled:opacity-50 disabled:bg-muted',
-            'min-h-[40px] max-h-[150px]'
+            'relative flex flex-1 items-center rounded-2xl transition-all duration-200',
+            'bg-muted/60',
+            isFocused && 'bg-muted ring-2 ring-primary/30'
           )}
-        />
+        >
+          <textarea
+            ref={textareaRef}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
+            placeholder={placeholder}
+            disabled={disabled}
+            rows={1}
+            className={cn(
+              'flex-1 resize-none bg-transparent px-4 py-3 text-[17px] text-foreground',
+              'placeholder:text-muted-foreground/60',
+              'outline-none',
+              'min-h-[48px] max-h-[150px]',
+              'disabled:opacity-50'
+            )}
+          />
+        </div>
         <button
           onClick={handleSubmit}
           disabled={disabled || !value.trim()}
           className={cn(
-            'flex-shrink-0 p-2 rounded-lg transition-colors',
-            'bg-primary text-primary-foreground hover:bg-primary/90',
+            'flex-shrink-0 h-12 w-12 flex items-center justify-center rounded-2xl transition-colors',
+            'bg-primary text-primary-foreground shadow-sm',
+            'active:opacity-80',
             'disabled:opacity-50 disabled:cursor-not-allowed'
           )}
         >
@@ -70,7 +83,7 @@ export function ChatInput({ onSend, disabled, placeholder = 'Ask about your note
           )}
         </button>
       </div>
-      <div className="mt-1 text-xs text-muted-foreground">
+      <div className="mt-2 text-xs text-muted-foreground/60 text-center">
         Press Enter to send, Shift+Enter for new line
       </div>
     </div>
