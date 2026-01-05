@@ -151,12 +151,15 @@ export function AppShell() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.15 }}
-                className="h-full"
+                className="h-full flex flex-col"
               >
                 {/* Mobile Editor Header */}
                 <div
-                  className="flex h-14 items-center gap-2 border-b border-border px-2"
-                  style={{ paddingTop: 'env(safe-area-inset-top)' }}
+                  className="flex items-center gap-2 border-b border-border px-2"
+                  style={{
+                    paddingTop: 'env(safe-area-inset-top)',
+                    minHeight: 'calc(3.5rem + env(safe-area-inset-top))'
+                  }}
                 >
                   <button
                     onClick={goBack}
@@ -166,7 +169,7 @@ export function AppShell() {
                   </button>
                   <span className="text-sm font-medium text-muted-foreground">Back to Notes</span>
                 </div>
-                <div className="h-[calc(100%-3.5rem)]">
+                <div className="flex-1 overflow-hidden">
                   <EditorPanel
                     noteId={selectedNoteId}
                     onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
