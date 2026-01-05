@@ -13,7 +13,8 @@ interface SwipeableCardProps {
 }
 
 const BUTTON_WIDTH = 80 // Width of each action button
-const SWIPE_THRESHOLD = 50 // Minimum swipe to trigger action reveal
+const SWIPE_THRESHOLD = 40 // Minimum swipe to trigger action reveal
+const VELOCITY_THRESHOLD = 300 // px/s - fast swipe triggers action regardless of distance
 
 export function SwipeableCard({
   children,
@@ -30,12 +31,27 @@ export function SwipeableCard({
   const actionWidth = showMove && onMove ? BUTTON_WIDTH * 2 : BUTTON_WIDTH
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
+    const velocityX = info.velocity.x
+
+    // Fast swipe left - show actions
+    if (velocityX < -VELOCITY_THRESHOLD) {
+      setShowingActions(true)
+      return
+    }
+
+    // Fast swipe right - hide actions
+    if (velocityX > VELOCITY_THRESHOLD) {
+      setShowingActions(false)
+      return
+    }
+
+    // Slow swipe: use position threshold
     // Swipe left past threshold - show actions
     if (info.offset.x < -SWIPE_THRESHOLD) {
       setShowingActions(true)
     }
     // Swipe right or small movement - hide actions
-    else if (info.offset.x > SWIPE_THRESHOLD || Math.abs(info.offset.x) < SWIPE_THRESHOLD) {
+    else {
       setShowingActions(false)
     }
   }
@@ -94,7 +110,7 @@ export function SwipeableCard({
         onDragEnd={handleDragEnd}
         animate={{ x: showingActions ? -actionWidth : 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        style={{ x }}
+        style={{ x, touchAction: 'pan-y' }}
         className="relative bg-card cursor-grab active:cursor-grabbing"
       >
         {children}
@@ -106,6 +122,10 @@ export function SwipeableCard({
           className="absolute inset-y-0 left-0 z-10"
           style={{ width: `calc(100% - ${actionWidth}px)` }}
           onClick={closeActions}
+          onTouchEnd={(e) => {
+            e.preventDefault()
+            closeActions()
+          }}
         />
       )}
     </div>
