@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { ChevronRight, Folder, FolderOpen, FileText, Plus, MoreHorizontal, Trash2, Pencil } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -6,6 +6,8 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useFolders, useCreateFolder, useDeleteFolder, useUpdateFolder } from '@/hooks/useFolders'
+import { useMoveNote } from '@/hooks/useNotes'
+import { useDragOptional } from '@/context/DragContext'
 import { cn } from '@/lib/utils'
 import type { FolderWithChildren } from '@/lib/types'
 
@@ -14,13 +16,47 @@ interface FolderTreeProps {
   onFolderSelect: (id: string | undefined) => void
   isTrashSelected?: boolean
   onTrashSelect?: () => void
+  onNoteMoved?: (message: string, type: 'success' | 'warning') => void
 }
 
-export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, onTrashSelect }: FolderTreeProps) {
+export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, onTrashSelect, onNoteMoved }: FolderTreeProps) {
   const { data: folders, isLoading } = useFolders()
   const createFolder = useCreateFolder()
+  const moveNote = useMoveNote()
+  const drag = useDragOptional()
+  const allNotesRef = useRef<HTMLButtonElement>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+
+  const isAllNotesDropTarget = drag?.hoveredDropZone === 'all-notes'
+
+  // Register "All Notes" as drop zone
+  useEffect(() => {
+    if (!drag || !allNotesRef.current) return
+    drag.registerDropZone('all-notes', allNotesRef.current)
+    return () => drag.unregisterDropZone('all-notes')
+  }, [drag])
+
+  // Handle drop on "All Notes"
+  const handleAllNotesMouseUp = async () => {
+    if (!drag?.isDragging || !drag.draggedNote || !isAllNotesDropTarget) return
+
+    const draggedNote = drag.draggedNote
+    const currentFolderId = draggedNote.folder_id
+
+    drag.endDrag()
+
+    if (currentFolderId === null) {
+      onNoteMoved?.('Already in "All Notes"', 'warning')
+    } else {
+      try {
+        await moveNote.mutateAsync({ noteId: draggedNote.id, folderId: null })
+        onNoteMoved?.('Removed from folder', 'success')
+      } catch (error) {
+        console.error('Failed to move note:', error)
+      }
+    }
+  }
 
   const handleCreateFolder = async () => {
     if (!newFolderName.trim()) return
@@ -48,11 +84,14 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
       <div className="p-2 space-y-1">
         {/* All Notes */}
         <button
+          ref={allNotesRef}
           onClick={() => onFolderSelect(undefined)}
+          onMouseUp={handleAllNotesMouseUp}
           className={cn(
             'flex items-center gap-2 w-full px-3 py-2 rounded-lg text-[15px] transition-colors',
             'hover:bg-secondary',
-            selectedFolderId === undefined && !isTrashSelected && 'bg-primary/10 text-primary'
+            selectedFolderId === undefined && !isTrashSelected && 'bg-primary/10 text-primary',
+            isAllNotesDropTarget && 'bg-primary/20 ring-2 ring-primary'
           )}
         >
           <FileText className="h-4 w-4" />
@@ -67,6 +106,7 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
             selectedId={selectedFolderId}
             onSelect={onFolderSelect}
             level={0}
+            onNoteMoved={onNoteMoved}
           />
         ))}
 
@@ -132,17 +172,50 @@ interface FolderNodeProps {
   selectedId: string | undefined
   onSelect: (id: string | undefined) => void
   level: number
+  onNoteMoved?: (message: string, type: 'success' | 'warning') => void
 }
 
-function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
+function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: FolderNodeProps) {
   const [isOpen, setIsOpen] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameName, setRenameName] = useState(folder.name)
   const deleteFolder = useDeleteFolder()
   const updateFolder = useUpdateFolder()
+  const moveNote = useMoveNote()
+  const drag = useDragOptional()
+  const dropZoneRef = useRef<HTMLDivElement>(null)
   const hasChildren = folder.children.length > 0
   const isSelected = selectedId === folder.id
+  const isDropTarget = drag?.hoveredDropZone === `folder-${folder.id}`
+
+  // Register as drop zone
+  useEffect(() => {
+    if (!drag || !dropZoneRef.current) return
+    drag.registerDropZone(`folder-${folder.id}`, dropZoneRef.current)
+    return () => drag.unregisterDropZone(`folder-${folder.id}`)
+  }, [drag, folder.id])
+
+  // Handle drop
+  const handleMouseUp = async () => {
+    if (!drag?.isDragging || !drag.draggedNote || !isDropTarget) return
+
+    const draggedNote = drag.draggedNote
+    const currentFolderId = draggedNote.folder_id
+
+    drag.endDrag()
+
+    if (currentFolderId === folder.id) {
+      onNoteMoved?.(`Already in "${folder.name}"`, 'warning')
+    } else {
+      try {
+        await moveNote.mutateAsync({ noteId: draggedNote.id, folderId: folder.id })
+        onNoteMoved?.(`Moved to "${folder.name}"`, 'success')
+      } catch (error) {
+        console.error('Failed to move note:', error)
+      }
+    }
+  }
 
   const handleDelete = async () => {
     try {
@@ -174,10 +247,13 @@ function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
         <div
+          ref={dropZoneRef}
+          onMouseUp={handleMouseUp}
           className={cn(
             'flex items-center gap-1 rounded-lg text-[15px] transition-colors group',
             'hover:bg-secondary',
-            isSelected && 'bg-primary/10 text-primary'
+            isSelected && 'bg-primary/10 text-primary',
+            isDropTarget && 'bg-primary/20 ring-2 ring-primary'
           )}
           style={{ paddingLeft: `${level * 12 + 12}px` }}
         >
@@ -265,6 +341,7 @@ function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
                 selectedId={selectedId}
                 onSelect={onSelect}
                 level={level + 1}
+                onNoteMoved={onNoteMoved}
               />
             ))}
           </CollapsibleContent>

@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { Pin, MoreHorizontal, FolderInput, Trash2, Pin as PinIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -7,7 +7,11 @@ import { SwipeableCard } from '@/components/ui/SwipeableCard'
 import { MoveNoteDialog } from './MoveNoteDialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useDeleteNote, useTogglePinNote } from '@/hooks/useNotes'
+import { useDragOptional } from '@/context/DragContext'
+import { useIsMobile } from '@/hooks/useMobile'
 import type { NotePreview } from '@/lib/types'
+
+const LONG_PRESS_DURATION = 500 // ms
 
 interface NoteCardProps {
   note: NotePreview
@@ -21,6 +25,53 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const deleteNote = useDeleteNote()
   const togglePin = useTogglePinNote()
+
+  // Long-press drag functionality (desktop only)
+  const drag = useDragOptional()
+  const isMobile = useIsMobile()
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null)
+  const isLongPressing = useRef(false)
+  const startPosition = useRef({ x: 0, y: 0 })
+
+  const isDragging = drag?.isDragging && drag?.draggedNote?.id === note.id
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    // Only enable on desktop and if drag context is available
+    if (isMobile || !drag) return
+
+    startPosition.current = { x: e.clientX, y: e.clientY }
+    isLongPressing.current = false
+
+    longPressTimer.current = setTimeout(() => {
+      isLongPressing.current = true
+      drag.startDrag(note, { x: e.clientX, y: e.clientY })
+    }, LONG_PRESS_DURATION)
+  }, [isMobile, drag, note])
+
+  const handleMouseUp = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  const handleMouseLeave = useCallback(() => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    // Don't trigger click if we were long pressing
+    if (isLongPressing.current) {
+      e.preventDefault()
+      e.stopPropagation()
+      isLongPressing.current = false
+      return
+    }
+    onClick()
+  }, [onClick])
 
   const handleDelete = async () => {
     try {
@@ -55,12 +106,16 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
     <>
       <SwipeableCard onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
         <div
-          onClick={onClick}
+          onClick={handleClick}
+          onMouseDown={handleMouseDown}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseLeave}
           className={cn(
-            'w-full text-left px-4 py-3.5 transition-colors cursor-pointer',
+            'w-full text-left px-4 py-3.5 transition-all cursor-pointer',
             'border border-border/50',
             'hover:bg-accent/50 group',
-            isSelected && 'bg-primary/10 border-primary/30'
+            isSelected && 'bg-primary/10 border-primary/30',
+            isDragging && 'opacity-50 scale-[0.98]'
           )}
         >
         {/* Title row with date */}

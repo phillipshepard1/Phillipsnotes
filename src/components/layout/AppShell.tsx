@@ -13,6 +13,9 @@ import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
+import { Toast, useToast } from '@/components/ui/Toast'
+import { DragOverlay } from '@/components/ui/DragOverlay'
+import { DragProvider } from '@/context/DragContext'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useCreateNote, useNotes, useSearchNotes } from '@/hooks/useNotes'
 import { NotesListView } from '@/components/notes/NotesListView'
@@ -35,6 +38,13 @@ export function AppShell() {
   const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
   const [notesListWidth, setNotesListWidth] = useState(288) // w-72 = 288px
   const isResizing = useRef<'sidebar' | 'notesList' | null>(null)
+
+  // Toast for drag-and-drop feedback
+  const { toast, showToast, hideToast } = useToast()
+
+  const handleNoteMoved = useCallback((message: string, type: 'success' | 'warning') => {
+    showToast(message, type)
+  }, [showToast])
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createNote = useCreateNote()
@@ -430,6 +440,7 @@ export function AppShell() {
 
   // Desktop Layout with resizable panels
   return (
+    <DragProvider>
     <div className="h-screen w-screen overflow-hidden flex bg-background">
       {/* Sidebar - resizable */}
       <div
@@ -444,6 +455,7 @@ export function AppShell() {
           searchInputRef={searchInputRef}
           isTrashSelected={isTrashView}
           onTrashSelect={handleTrashSelect}
+          onNoteMoved={handleNoteMoved}
         />
         {/* Resize handle */}
         <div
@@ -508,6 +520,18 @@ export function AppShell() {
         show={showSaveFeedback}
         onHide={() => setShowSaveFeedback(false)}
       />
+
+      {/* Drag-and-drop overlay */}
+      <DragOverlay />
+
+      {/* Drag-and-drop toast notifications */}
+      <Toast
+        message={toast.message}
+        type={toast.type}
+        show={toast.show}
+        onHide={hideToast}
+      />
     </div>
+    </DragProvider>
   )
 }

@@ -15,9 +15,10 @@ interface SidebarProps {
   isTrashSelected?: boolean
   onTrashSelect?: () => void
   isMobile?: boolean
+  onNoteMoved?: (message: string, type: 'success' | 'warning') => void
 }
 
-export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportClick, searchInputRef, isTrashSelected, onTrashSelect, isMobile = false }: SidebarProps) {
+export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportClick, searchInputRef, isTrashSelected, onTrashSelect, isMobile = false, onNoteMoved }: SidebarProps) {
   const { user, signOut } = useAuth()
   const [searchQuery, setSearchQuery] = useState('')
   const [isTagManagerOpen, setIsTagManagerOpen] = useState(false)
@@ -59,6 +60,7 @@ export function Sidebar({ selectedFolderId, onFolderSelect, onSearch, onImportCl
           onFolderSelect={onFolderSelect}
           isTrashSelected={isTrashSelected}
           onTrashSelect={onTrashSelect}
+          onNoteMoved={onNoteMoved}
         />
       </div>
 
