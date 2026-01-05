@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { ArrowLeft, MoreHorizontal } from 'lucide-react'
 import { Sidebar } from './Sidebar'
@@ -8,6 +8,7 @@ import { MobileToolbar } from './MobileToolbar'
 import { FolderList } from '@/components/folders/FolderList'
 import { CircularButton } from '@/components/ui/CircularButton'
 import { LargeTitle } from '@/components/ui/LargeTitle'
+import { EdgeSwipeBack } from '@/components/ui/EdgeSwipeBack'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
@@ -29,6 +30,11 @@ export function AppShell() {
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false)
   const [showSaveFeedback, setShowSaveFeedback] = useState(false)
   const [isTrashView, setIsTrashView] = useState(false)
+
+  // Panel resize state (desktop only)
+  const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
+  const [notesListWidth, setNotesListWidth] = useState(288) // w-72 = 288px
+  const isResizing = useRef<'sidebar' | 'notesList' | null>(null)
 
   const searchInputRef = useRef<HTMLInputElement>(null)
   const createNote = useCreateNote()
@@ -158,6 +164,40 @@ export function AppShell() {
     ],
   })
 
+  // Panel resize handlers (desktop only)
+  const handleResizeStart = useCallback((panel: 'sidebar' | 'notesList') => {
+    isResizing.current = panel
+    document.body.style.cursor = 'col-resize'
+    document.body.style.userSelect = 'none'
+  }, [])
+
+  const handleResizeEnd = useCallback(() => {
+    isResizing.current = null
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }, [])
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing.current) return
+
+    if (isResizing.current === 'sidebar') {
+      const newWidth = Math.max(180, Math.min(400, e.clientX))
+      setSidebarWidth(newWidth)
+    } else if (isResizing.current === 'notesList') {
+      const newWidth = Math.max(200, Math.min(500, e.clientX - sidebarWidth))
+      setNotesListWidth(newWidth)
+    }
+  }, [sidebarWidth])
+
+  useEffect(() => {
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleResizeEnd)
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleResizeEnd)
+    }
+  }, [handleMouseMove, handleResizeEnd])
+
   // Mobile Layout - Apple Notes Style
   if (isMobile) {
     return (
@@ -193,46 +233,50 @@ export function AppShell() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.15 }}
-                className="h-full flex flex-col"
+                className="h-full"
               >
-                {/* Fixed Header - won't scroll */}
-                <div className="flex-shrink-0">
-                  {/* Mobile Notes Header */}
-                  <div
-                    className="flex items-center justify-between px-2"
-                    style={{
-                      paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                      minHeight: 'calc(44px + env(safe-area-inset-top))',
-                    }}
-                  >
-                    <CircularButton onClick={goBack} size="md">
-                      <ArrowLeft className="h-5 w-5" />
-                    </CircularButton>
-                    <CircularButton onClick={() => {}} size="md">
-                      <MoreHorizontal className="h-5 w-5" />
-                    </CircularButton>
+                <EdgeSwipeBack onBack={goBack}>
+                  <div className="h-full flex flex-col">
+                    {/* Fixed Header - won't scroll */}
+                    <div className="flex-shrink-0">
+                      {/* Mobile Notes Header */}
+                      <div
+                        className="flex items-center justify-between px-2"
+                        style={{
+                          paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                          minHeight: 'calc(44px + env(safe-area-inset-top))',
+                        }}
+                      >
+                        <CircularButton onClick={goBack} size="md">
+                          <ArrowLeft className="h-5 w-5" />
+                        </CircularButton>
+                        <CircularButton onClick={() => {}} size="md">
+                          <MoreHorizontal className="h-5 w-5" />
+                        </CircularButton>
+                      </div>
+
+                      {/* Large Title */}
+                      <LargeTitle
+                        title={isTrashView ? 'Recently Deleted' : folderName}
+                        subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
+                        className="mb-2"
+                      />
+                    </div>
+
+                    {/* Notes List - scrollable */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <NotesList
+                        folderId={selectedFolderId}
+                        selectedNoteId={selectedNoteId}
+                        onNoteSelect={handleNoteSelect}
+                        searchQuery={searchQuery}
+                        isTrashView={isTrashView}
+                        isMobile={true}
+                        hideHeader={true}
+                      />
+                    </div>
                   </div>
-
-                  {/* Large Title */}
-                  <LargeTitle
-                    title={isTrashView ? 'Recently Deleted' : folderName}
-                    subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
-                    className="mb-2"
-                  />
-                </div>
-
-                {/* Notes List - scrollable */}
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <NotesList
-                    folderId={selectedFolderId}
-                    selectedNoteId={selectedNoteId}
-                    onNoteSelect={handleNoteSelect}
-                    searchQuery={searchQuery}
-                    isTrashView={isTrashView}
-                    isMobile={true}
-                    hideHeader={true}
-                  />
-                </div>
+                </EdgeSwipeBack>
               </motion.div>
             )}
 
@@ -244,45 +288,49 @@ export function AppShell() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 20 }}
                 transition={{ duration: 0.15 }}
-                className="h-full flex flex-col"
+                className="h-full"
               >
-                {/* Fixed Header - won't scroll */}
-                <div className="flex-shrink-0">
-                  {/* Search Header */}
-                  <div
-                    className="flex items-center justify-between px-2"
-                    style={{
-                      paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                      minHeight: 'calc(44px + env(safe-area-inset-top))',
-                    }}
-                  >
-                    <CircularButton onClick={handleClearSearch} size="md">
-                      <ArrowLeft className="h-5 w-5" />
-                    </CircularButton>
-                  </div>
+                <EdgeSwipeBack onBack={handleClearSearch}>
+                  <div className="h-full flex flex-col">
+                    {/* Fixed Header - won't scroll */}
+                    <div className="flex-shrink-0">
+                      {/* Search Header */}
+                      <div
+                        className="flex items-center justify-between px-2"
+                        style={{
+                          paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                          minHeight: 'calc(44px + env(safe-area-inset-top))',
+                        }}
+                      >
+                        <CircularButton onClick={handleClearSearch} size="md">
+                          <ArrowLeft className="h-5 w-5" />
+                        </CircularButton>
+                      </div>
 
-                  {/* Large Title */}
-                  <LargeTitle
-                    title="Search"
-                    subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
-                    className="mb-2"
-                  />
-                </div>
-
-                {/* Search Results - scrollable */}
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  {searchQuery.length >= 2 ? (
-                    <NotesListView
-                      searchQuery={searchQuery}
-                      selectedNoteId={selectedNoteId}
-                      onNoteSelect={handleNoteSelect}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                      <p>Enter at least 2 characters to search</p>
+                      {/* Large Title */}
+                      <LargeTitle
+                        title="Search"
+                        subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
+                        className="mb-2"
+                      />
                     </div>
-                  )}
-                </div>
+
+                    {/* Search Results - scrollable */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      {searchQuery.length >= 2 ? (
+                        <NotesListView
+                          searchQuery={searchQuery}
+                          selectedNoteId={selectedNoteId}
+                          onNoteSelect={handleNoteSelect}
+                        />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                          <p>Enter at least 2 characters to search</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </EdgeSwipeBack>
               </motion.div>
             )}
 
@@ -294,33 +342,37 @@ export function AppShell() {
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: 20 }}
                 transition={{ duration: 0.15 }}
-                className="h-full flex flex-col"
+                className="h-full"
               >
-                {/* Mobile Editor Header - fixed */}
-                <div
-                  className="flex-shrink-0 flex items-center gap-2 border-b border-border px-2"
-                  style={{
-                    paddingTop: 'env(safe-area-inset-top)',
-                    minHeight: 'calc(3.5rem + env(safe-area-inset-top))',
-                  }}
-                >
-                  <CircularButton onClick={goBack} size="md">
-                    <ArrowLeft className="h-5 w-5" />
-                  </CircularButton>
-                  <span className="text-sm font-medium text-muted-foreground">
-                    Back to Notes
-                  </span>
-                </div>
-                {/* Editor content - scrollable */}
-                <div className="flex-1 min-h-0 overflow-hidden">
-                  <EditorPanel
-                    noteId={selectedNoteId}
-                    onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
-                    isAIChatOpen={isAIChatOpen}
-                    onNoteSelect={setSelectedNoteId}
-                    isMobile={true}
-                  />
-                </div>
+                <EdgeSwipeBack onBack={goBack}>
+                  <div className="h-full flex flex-col">
+                    {/* Mobile Editor Header - fixed */}
+                    <div
+                      className="flex-shrink-0 flex items-center gap-2 border-b border-border px-2"
+                      style={{
+                        paddingTop: 'env(safe-area-inset-top)',
+                        minHeight: 'calc(3.5rem + env(safe-area-inset-top))',
+                      }}
+                    >
+                      <CircularButton onClick={goBack} size="md">
+                        <ArrowLeft className="h-5 w-5" />
+                      </CircularButton>
+                      <span className="text-sm font-medium text-muted-foreground">
+                        Back to Notes
+                      </span>
+                    </div>
+                    {/* Editor content - scrollable */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                      <EditorPanel
+                        noteId={selectedNoteId}
+                        onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
+                        isAIChatOpen={isAIChatOpen}
+                        onNoteSelect={setSelectedNoteId}
+                        isMobile={true}
+                      />
+                    </div>
+                  </div>
+                </EdgeSwipeBack>
               </motion.div>
             )}
           </AnimatePresence>
@@ -368,11 +420,14 @@ export function AppShell() {
     )
   }
 
-  // Desktop Layout (unchanged)
+  // Desktop Layout with resizable panels
   return (
     <div className="h-screen w-screen overflow-hidden flex bg-background">
-      {/* Sidebar - fixed width */}
-      <div className="w-60 flex-shrink-0 border-r border-border">
+      {/* Sidebar - resizable */}
+      <div
+        className="flex-shrink-0 border-r border-border relative"
+        style={{ width: sidebarWidth }}
+      >
         <Sidebar
           selectedFolderId={selectedFolderId}
           onFolderSelect={handleFolderSelect}
@@ -382,16 +437,29 @@ export function AppShell() {
           isTrashSelected={isTrashView}
           onTrashSelect={handleTrashSelect}
         />
+        {/* Resize handle */}
+        <div
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+          onMouseDown={() => handleResizeStart('sidebar')}
+        />
       </div>
 
-      {/* Notes List - fixed width */}
-      <div className="w-72 flex-shrink-0 border-r border-border">
+      {/* Notes List - resizable */}
+      <div
+        className="flex-shrink-0 border-r border-border relative"
+        style={{ width: notesListWidth }}
+      >
         <NotesList
           folderId={selectedFolderId}
           selectedNoteId={selectedNoteId}
           onNoteSelect={handleNoteSelect}
           searchQuery={searchQuery}
           isTrashView={isTrashView}
+        />
+        {/* Resize handle */}
+        <div
+          className="absolute top-0 right-0 w-1 h-full cursor-col-resize hover:bg-primary/30 active:bg-primary/50 transition-colors z-10"
+          onMouseDown={() => handleResizeStart('notesList')}
         />
       </div>
 
