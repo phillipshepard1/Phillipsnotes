@@ -13,6 +13,7 @@ import type { NotePreview } from '@/lib/types'
 
 const LONG_PRESS_DURATION = 500 // ms
 const DRAG_COOLDOWN = 3000 // ms - disable swipe for this long after drag ends
+const MOVEMENT_THRESHOLD = 10 // px - cancel long press if mouse moves more than this
 
 interface NoteCardProps {
   note: NotePreview
@@ -33,6 +34,7 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   const isMobile = useIsMobile()
   const longPressTimer = useRef<NodeJS.Timeout | null>(null)
   const isLongPressing = useRef(false)
+  const isSwiping = useRef(false)
   const startPosition = useRef({ x: 0, y: 0 })
 
   const isDragging = drag?.isDragging && drag?.draggedNote?.id === note.id
@@ -61,17 +63,35 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   const isInDragCooldown = Date.now() < swipeDisabledUntil
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    // Only enable on desktop and if drag context is available
-    if (isMobile || !drag) return
-
     startPosition.current = { x: e.clientX, y: e.clientY }
     isLongPressing.current = false
+    isSwiping.current = false
+
+    // Only enable long-press drag on desktop and if drag context is available
+    if (isMobile || !drag) return
 
     longPressTimer.current = setTimeout(() => {
       isLongPressing.current = true
       drag.startDrag(note, { x: e.clientX, y: e.clientY })
     }, LONG_PRESS_DURATION)
   }, [isMobile, drag, note])
+
+  // Cancel long press if mouse moves (user is swiping, not long pressing)
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    const dx = Math.abs(e.clientX - startPosition.current.x)
+    const dy = Math.abs(e.clientY - startPosition.current.y)
+
+    // If user moved the mouse horizontally, they're swiping - prevent click
+    if (dx > MOVEMENT_THRESHOLD) {
+      isSwiping.current = true
+    }
+
+    // Cancel long press timer if moved significantly
+    if (longPressTimer.current && (dx > MOVEMENT_THRESHOLD || dy > MOVEMENT_THRESHOLD)) {
+      clearTimeout(longPressTimer.current)
+      longPressTimer.current = null
+    }
+  }, [])
 
   const handleMouseUp = useCallback(() => {
     if (longPressTimer.current) {
@@ -92,11 +112,12 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
   }, [])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
-    // Don't trigger click if we were long pressing
-    if (isLongPressing.current) {
+    // Don't trigger click if we were long pressing or swiping
+    if (isLongPressing.current || isSwiping.current) {
       e.preventDefault()
       e.stopPropagation()
       isLongPressing.current = false
+      isSwiping.current = false
       return
     }
     onClick()
@@ -137,6 +158,7 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
         <div
           onClick={handleClick}
           onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseLeave}
           className={cn(

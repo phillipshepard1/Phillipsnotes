@@ -90,11 +90,12 @@ export function SwipeableCard({
         dragConstraints={{ left: -actionWidth, right: 0 }}
         dragElastic={0.1}
         dragMomentum={false}
+        dragDirectionLock
         onDragEnd={handleDragEnd}
         animate={{ x: showingActions ? -actionWidth : 0 }}
         transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-        style={{ x, touchAction: 'pan-y' }}
-        className="relative bg-card"
+        style={{ x }}
+        className="relative bg-card cursor-grab active:cursor-grabbing"
       >
         {children}
       </motion.div>
