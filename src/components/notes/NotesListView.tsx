@@ -139,7 +139,7 @@ export function NotesListView({
 
               {/* Notes List */}
               {!isCollapsed && (
-                <div className="divide-y divide-border">
+                <div className="space-y-2 pt-2 pb-1">
                   {groupNotes.map((note) => (
                     <div key={note.id} className="px-4">
                       <NoteCard
