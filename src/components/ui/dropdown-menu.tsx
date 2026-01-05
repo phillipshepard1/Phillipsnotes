@@ -1,4 +1,5 @@
 import * as React from 'react'
+import { createPortal } from 'react-dom'
 import { cn } from '@/lib/utils'
 
 interface DropdownMenuProps {
@@ -8,16 +9,18 @@ interface DropdownMenuProps {
 interface DropdownMenuContextType {
   open: boolean
   setOpen: (open: boolean) => void
+  triggerRef: React.RefObject<HTMLDivElement | null>
 }
 
 const DropdownMenuContext = React.createContext<DropdownMenuContextType | null>(null)
 
 export function DropdownMenu({ children }: DropdownMenuProps) {
   const [open, setOpen] = React.useState(false)
+  const triggerRef = React.useRef<HTMLDivElement>(null)
 
   return (
-    <DropdownMenuContext.Provider value={{ open, setOpen }}>
-      <div className="relative inline-block">
+    <DropdownMenuContext.Provider value={{ open, setOpen, triggerRef }}>
+      <div ref={triggerRef} className="relative inline-block">
         {children}
       </div>
     </DropdownMenuContext.Provider>
@@ -46,15 +49,28 @@ export function DropdownMenuTrigger({ children, asChild }: { children: React.Rea
   )
 }
 
-export function DropdownMenuContent({ children, align = 'end' }: { children: React.ReactNode; align?: 'start' | 'end' }) {
+export function DropdownMenuContent({ children, align = 'end', className }: { children: React.ReactNode; align?: 'start' | 'end'; className?: string }) {
   const context = React.useContext(DropdownMenuContext)
   if (!context) throw new Error('DropdownMenuContent must be used within DropdownMenu')
 
   const ref = React.useRef<HTMLDivElement>(null)
+  const [position, setPosition] = React.useState({ top: 0, left: 0 })
+
+  // Calculate position based on trigger element
+  React.useEffect(() => {
+    if (context.open && context.triggerRef.current) {
+      const rect = context.triggerRef.current.getBoundingClientRect()
+      setPosition({
+        top: rect.bottom + window.scrollY + 4,
+        left: align === 'end' ? rect.right + window.scrollX : rect.left + window.scrollX,
+      })
+    }
+  }, [context.open, context.triggerRef, align])
 
   React.useEffect(() => {
     const handleClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) {
+      if (ref.current && !ref.current.contains(e.target as Node) &&
+          context.triggerRef.current && !context.triggerRef.current.contains(e.target as Node)) {
         context.setOpen(false)
       }
     }
@@ -66,17 +82,24 @@ export function DropdownMenuContent({ children, align = 'end' }: { children: Rea
 
   if (!context.open) return null
 
-  return (
+  return createPortal(
     <div
       ref={ref}
+      style={{
+        position: 'absolute',
+        top: position.top,
+        left: align === 'end' ? 'auto' : position.left,
+        right: align === 'end' ? window.innerWidth - position.left : 'auto',
+      }}
       className={cn(
-        'absolute z-50 mt-1 min-w-[160px] bg-popover rounded-lg shadow-lg border border-border py-1',
+        'z-50 min-w-[160px] bg-popover rounded-lg shadow-lg border border-border py-1',
         'animate-in fade-in-0 zoom-in-95',
-        align === 'end' ? 'right-0' : 'left-0'
+        className
       )}
     >
       {children}
-    </div>
+    </div>,
+    document.body
   )
 }
 
