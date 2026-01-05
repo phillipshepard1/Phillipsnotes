@@ -6,21 +6,66 @@ import { ThemeProvider } from '@/hooks/useTheme'
 import { LoginForm } from '@/components/auth/LoginForm'
 import { useAuth } from '@/hooks/useAuth'
 import { useAIChat, useSemanticSearch } from '@/hooks/useAI'
+import { useCreateNote } from '@/hooks/useNotes'
 import { ChatMessage } from '@/components/ai/ChatMessage'
 import { ChatInput } from '@/components/ai/ChatInput'
 import { SemanticSearchResults } from '@/components/search/SemanticSearchResults'
 import { UpdatePrompt } from '@/components/pwa'
-import { Sparkles, Search, Trash2, X } from 'lucide-react'
+import { Sparkles, Search, Trash2, X, FileText } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  sources?: Array<{ noteId: string; title: string }>
+  isStreaming?: boolean
+}
+
+function convertChatToBlocks(messages: Message[]) {
+  const blocks: unknown[] = []
+
+  // First user message becomes the title
+  const firstUserMsg = messages.find(m => m.role === 'user')
+  const title = firstUserMsg?.content.slice(0, 100) || 'AI Chat'
+
+  // Add each message as formatted blocks
+  for (const msg of messages) {
+    // Role header (h3)
+    blocks.push({
+      type: 'heading',
+      props: { level: 3 },
+      content: [{ type: 'text', text: msg.role === 'user' ? 'You' : 'AI Assistant' }],
+    })
+
+    // Message content as paragraphs
+    const paragraphs = msg.content.split('\n\n')
+    for (const para of paragraphs) {
+      if (para.trim()) {
+        blocks.push({
+          type: 'paragraph',
+          content: [{ type: 'text', text: para }],
+        })
+      }
+    }
+
+    // Empty paragraph as spacer
+    blocks.push({ type: 'paragraph', content: [] })
+  }
+
+  return { title, blocks }
+}
 
 function AIAppContent() {
   const { user, isLoading: authLoading } = useAuth()
   const [activeTab, setActiveTab] = useState<'chat' | 'search'>('chat')
   const [searchQuery, setSearchQuery] = useState('')
+  const [isSaving, setIsSaving] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // AI Chat
   const { messages, isLoading, error, sendMessage, clearMessages } = useAIChat({})
+  const createNote = useCreateNote()
 
   // Semantic Search
   const {
@@ -29,6 +74,27 @@ function AIAppContent() {
     search: performSearch,
     clearResults,
   } = useSemanticSearch()
+
+  // Save chat as a new note and open in Notes app
+  const handleSaveAsNote = async () => {
+    if (messages.length === 0 || isSaving) return
+
+    setIsSaving(true)
+    try {
+      const { title, blocks } = convertChatToBlocks(messages as Message[])
+
+      const note = await createNote.mutateAsync({
+        title,
+        content: blocks,
+      })
+
+      // Navigate to Notes app with the new note
+      window.location.href = `/?noteId=${note.id}`
+    } catch (error) {
+      console.error('Failed to save chat as note:', error)
+      setIsSaving(false)
+    }
+  }
 
   // Auto-scroll to bottom on new messages
   useEffect(() => {
@@ -81,13 +147,23 @@ function AIAppContent() {
             <h1 className="font-semibold text-lg">Phillips AI</h1>
           </div>
           {activeTab === 'chat' && messages.length > 0 && (
-            <button
-              onClick={clearMessages}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors"
-              title="Clear chat"
-            >
-              <Trash2 className="w-5 h-5 text-muted-foreground" />
-            </button>
+            <div className="flex items-center gap-1">
+              <button
+                onClick={handleSaveAsNote}
+                disabled={isSaving}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+                title="Save as note"
+              >
+                <FileText className="w-5 h-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={clearMessages}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                title="Clear chat"
+              >
+                <Trash2 className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
           )}
           {activeTab === 'search' && searchQuery && (
             <button
