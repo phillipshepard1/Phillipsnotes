@@ -194,31 +194,34 @@ export function AppShell() {
                 transition={{ duration: 0.15 }}
                 className="h-full flex flex-col"
               >
-                {/* Mobile Notes Header */}
-                <div
-                  className="flex items-center justify-between px-2"
-                  style={{
-                    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                    minHeight: 'calc(44px + env(safe-area-inset-top))',
-                  }}
-                >
-                  <CircularButton onClick={goBack} size="md">
-                    <ArrowLeft className="h-5 w-5" />
-                  </CircularButton>
-                  <CircularButton onClick={() => {}} size="md">
-                    <MoreHorizontal className="h-5 w-5" />
-                  </CircularButton>
+                {/* Fixed Header - won't scroll */}
+                <div className="flex-shrink-0">
+                  {/* Mobile Notes Header */}
+                  <div
+                    className="flex items-center justify-between px-2"
+                    style={{
+                      paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                      minHeight: 'calc(44px + env(safe-area-inset-top))',
+                    }}
+                  >
+                    <CircularButton onClick={goBack} size="md">
+                      <ArrowLeft className="h-5 w-5" />
+                    </CircularButton>
+                    <CircularButton onClick={() => {}} size="md">
+                      <MoreHorizontal className="h-5 w-5" />
+                    </CircularButton>
+                  </div>
+
+                  {/* Large Title */}
+                  <LargeTitle
+                    title={isTrashView ? 'Recently Deleted' : folderName}
+                    subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
+                    className="mb-2"
+                  />
                 </div>
 
-                {/* Large Title */}
-                <LargeTitle
-                  title={isTrashView ? 'Recently Deleted' : folderName}
-                  subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
-                  className="mb-2"
-                />
-
-                {/* Notes List */}
-                <div className="flex-1 overflow-hidden">
+                {/* Notes List - scrollable */}
+                <div className="flex-1 min-h-0 overflow-hidden">
                   <NotesList
                     folderId={selectedFolderId}
                     selectedNoteId={selectedNoteId}
@@ -242,28 +245,31 @@ export function AppShell() {
                 transition={{ duration: 0.15 }}
                 className="h-full flex flex-col"
               >
-                {/* Search Header */}
-                <div
-                  className="flex items-center justify-between px-2"
-                  style={{
-                    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
-                    minHeight: 'calc(44px + env(safe-area-inset-top))',
-                  }}
-                >
-                  <CircularButton onClick={handleClearSearch} size="md">
-                    <ArrowLeft className="h-5 w-5" />
-                  </CircularButton>
+                {/* Fixed Header - won't scroll */}
+                <div className="flex-shrink-0">
+                  {/* Search Header */}
+                  <div
+                    className="flex items-center justify-between px-2"
+                    style={{
+                      paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                      minHeight: 'calc(44px + env(safe-area-inset-top))',
+                    }}
+                  >
+                    <CircularButton onClick={handleClearSearch} size="md">
+                      <ArrowLeft className="h-5 w-5" />
+                    </CircularButton>
+                  </div>
+
+                  {/* Large Title */}
+                  <LargeTitle
+                    title="Search"
+                    subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
+                    className="mb-2"
+                  />
                 </div>
 
-                {/* Large Title */}
-                <LargeTitle
-                  title="Search"
-                  subtitle={searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
-                  className="mb-2"
-                />
-
-                {/* Search Results */}
-                <div className="flex-1 overflow-hidden">
+                {/* Search Results - scrollable */}
+                <div className="flex-1 min-h-0 overflow-hidden">
                   {searchQuery.length >= 2 ? (
                     <NotesListView
                       searchQuery={searchQuery}
@@ -289,9 +295,9 @@ export function AppShell() {
                 transition={{ duration: 0.15 }}
                 className="h-full flex flex-col"
               >
-                {/* Mobile Editor Header */}
+                {/* Mobile Editor Header - fixed */}
                 <div
-                  className="flex items-center gap-2 border-b border-border px-2"
+                  className="flex-shrink-0 flex items-center gap-2 border-b border-border px-2"
                   style={{
                     paddingTop: 'env(safe-area-inset-top)',
                     minHeight: 'calc(3.5rem + env(safe-area-inset-top))',
@@ -304,7 +310,8 @@ export function AppShell() {
                     Back to Notes
                   </span>
                 </div>
-                <div className="flex-1 overflow-hidden">
+                {/* Editor content - scrollable */}
+                <div className="flex-1 min-h-0 overflow-hidden">
                   <EditorPanel
                     noteId={selectedNoteId}
                     onAIChatToggle={() => setIsAIChatOpen(!isAIChatOpen)}
