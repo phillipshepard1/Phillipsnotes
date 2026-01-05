@@ -6,27 +6,45 @@ interface EdgeSwipeBackProps {
   onBack: () => void
   children: React.ReactNode
   disabled?: boolean
+  previousScreenTitle?: string
 }
 
 const EDGE_WIDTH = 30 // Pixels from left edge to start gesture
 const BACK_THRESHOLD = 120 // Pixels to swipe before triggering back
 const SCREEN_WIDTH = typeof window !== 'undefined' ? window.innerWidth : 400
 
-export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeBackProps) {
+export function EdgeSwipeBack({
+  onBack,
+  children,
+  disabled = false,
+  previousScreenTitle = 'Back'
+}: EdgeSwipeBackProps) {
   const containerRef = useRef<HTMLDivElement>(null)
   const [isEdgeSwipe, setIsEdgeSwipe] = useState(false)
   const controls = useAnimation()
 
   const x = useMotionValue(0)
 
-  // Transform values for animations
-  const backdropOpacity = useTransform(x, [0, SCREEN_WIDTH * 0.4], [0, 0.3])
-  const indicatorX = useTransform(x, [0, BACK_THRESHOLD], [-40, 16])
-  const indicatorOpacity = useTransform(x, [0, 40, BACK_THRESHOLD], [0, 0.5, 1])
-  const indicatorScale = useTransform(x, [0, BACK_THRESHOLD], [0.6, 1])
-  const shadowOpacity = useTransform(x, [0, 100], [0, 0.15])
+  // Transform values for the current screen (slides right)
+  const currentScreenShadow = useTransform(
+    x,
+    [0, SCREEN_WIDTH * 0.5],
+    ['0px 0px 0px rgba(0,0,0,0)', '-10px 0px 30px rgba(0,0,0,0.2)']
+  )
 
-  // Track touch start position
+  // Transform values for the "previous screen" preview (slides in from left)
+  const prevScreenX = useTransform(x, [0, SCREEN_WIDTH], [-SCREEN_WIDTH * 0.3, 0])
+  const prevScreenScale = useTransform(x, [0, SCREEN_WIDTH * 0.5], [0.92, 1])
+  const prevScreenOpacity = useTransform(x, [0, 100], [0, 1])
+
+  // Overlay that darkens the previous screen
+  const overlayOpacity = useTransform(x, [0, SCREEN_WIDTH * 0.5], [0.4, 0])
+
+  // Back chevron indicator
+  const chevronOpacity = useTransform(x, [0, 60, BACK_THRESHOLD], [0, 0.7, 1])
+  const chevronX = useTransform(x, [0, BACK_THRESHOLD], [0, 12])
+
+  // Track touch
   const touchStartX = useRef(0)
   const touchStartY = useRef(0)
   const isDragging = useRef(false)
@@ -42,7 +60,6 @@ export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeB
       touchStartX.current = touch.clientX
       touchStartY.current = touch.clientY
 
-      // Check if touch started near left edge
       const rect = container.getBoundingClientRect()
       const relativeX = touch.clientX - rect.left
 
@@ -59,7 +76,7 @@ export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeB
       const deltaX = touch.clientX - touchStartX.current
       const deltaY = touch.clientY - touchStartY.current
 
-      // If vertical scroll is greater, cancel the swipe
+      // Cancel if scrolling vertically
       if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 10) {
         isDragging.current = false
         setIsEdgeSwipe(false)
@@ -67,11 +84,9 @@ export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeB
         return
       }
 
-      // Only allow swiping right (positive deltaX)
       if (deltaX > 0) {
-        // Prevent default to stop scrolling while swiping
         e.preventDefault()
-        x.set(Math.min(deltaX, SCREEN_WIDTH * 0.8))
+        x.set(Math.min(deltaX, SCREEN_WIDTH * 0.85))
       }
     }
 
@@ -82,14 +97,12 @@ export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeB
       const currentX = x.get()
 
       if (currentX > BACK_THRESHOLD) {
-        // Animate off screen then trigger back
         controls.start({ x: SCREEN_WIDTH }).then(() => {
           onBack()
           x.set(0)
           controls.set({ x: 0 })
         })
       } else {
-        // Snap back
         controls.start({ x: 0 })
       }
 
@@ -114,48 +127,81 @@ export function EdgeSwipeBack({ onBack, children, disabled = false }: EdgeSwipeB
   }
 
   return (
-    <div ref={containerRef} className="relative h-full w-full overflow-hidden">
-      {/* Dark backdrop that appears as you swipe */}
+    <div ref={containerRef} className="relative h-full w-full overflow-hidden bg-muted">
+      {/* Previous screen preview (background layer) */}
       <motion.div
-        className="absolute inset-0 bg-black pointer-events-none z-40"
-        style={{ opacity: backdropOpacity }}
-      />
-
-      {/* Back arrow indicator */}
-      <motion.div
-        className="absolute top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+        className="absolute inset-0 bg-background"
         style={{
-          x: indicatorX,
-          opacity: indicatorOpacity,
-          scale: indicatorScale
+          x: prevScreenX,
+          scale: prevScreenScale,
+          opacity: prevScreenOpacity,
         }}
       >
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-xl">
-          <ChevronLeft className="h-7 w-7" strokeWidth={2.5} />
+        {/* Simulated previous screen content */}
+        <div className="h-full flex flex-col">
+          {/* Header area */}
+          <div
+            className="flex items-center gap-3 px-4 border-b border-border"
+            style={{
+              paddingTop: 'calc(env(safe-area-inset-top) + 12px)',
+              paddingBottom: '12px'
+            }}
+          >
+            <ChevronLeft className="h-5 w-5 text-primary" />
+            <span className="text-primary font-medium">{previousScreenTitle}</span>
+          </div>
+
+          {/* Content preview (blurred bars representing content) */}
+          <div className="flex-1 p-4 space-y-3">
+            <div className="h-8 w-48 bg-foreground/10 rounded-lg" />
+            <div className="h-4 w-24 bg-muted-foreground/20 rounded" />
+            <div className="mt-6 space-y-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-4 rounded-xl bg-card border border-border/50">
+                  <div className="h-4 w-32 bg-foreground/10 rounded mb-2" />
+                  <div className="h-3 w-full bg-muted-foreground/10 rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
+
+        {/* Overlay to darken the previous screen */}
+        <motion.div
+          className="absolute inset-0 bg-black pointer-events-none"
+          style={{ opacity: overlayOpacity }}
+        />
       </motion.div>
 
-      {/* Main content that slides */}
+      {/* Current screen (foreground, slides right) */}
       <motion.div
-        className="h-full w-full bg-background"
-        style={{ x }}
+        className="absolute inset-0 bg-background"
+        style={{
+          x,
+          boxShadow: currentScreenShadow,
+        }}
         animate={controls}
         transition={{ type: 'spring', damping: 30, stiffness: 400 }}
       >
-        {/* Left shadow edge */}
-        <motion.div
-          className="absolute inset-y-0 left-0 w-4 pointer-events-none z-10"
-          style={{
-            opacity: shadowOpacity,
-            background: 'linear-gradient(to right, rgba(0,0,0,0.2), transparent)',
-          }}
-        />
         {children}
       </motion.div>
 
-      {/* Invisible left edge touch zone */}
+      {/* Back chevron that appears on left edge */}
+      <motion.div
+        className="absolute left-3 top-1/2 -translate-y-1/2 z-50 pointer-events-none"
+        style={{
+          opacity: chevronOpacity,
+          x: chevronX,
+        }}
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/90 text-primary-foreground shadow-lg backdrop-blur-sm">
+          <ChevronLeft className="h-6 w-6" strokeWidth={2.5} />
+        </div>
+      </motion.div>
+
+      {/* Left edge touch zone */}
       <div
-        className="absolute inset-y-0 left-0 w-8 z-30"
+        className="absolute inset-y-0 left-0 w-8 z-40"
         style={{ touchAction: 'pan-x' }}
       />
     </div>
