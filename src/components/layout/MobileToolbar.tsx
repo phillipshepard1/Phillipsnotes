@@ -78,6 +78,11 @@ export function MobileToolbar({
             onChange={(e) => onSearchChange(e.target.value)}
             onFocus={handleFocus}
             onBlur={handleBlur}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                inputRef.current?.blur()
+              }
+            }}
             placeholder="Search"
             className={cn(
               'h-10 w-full bg-transparent pl-9 pr-16 text-sm text-foreground',

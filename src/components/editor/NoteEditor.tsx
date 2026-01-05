@@ -32,6 +32,8 @@ export function NoteEditor({ noteId, onNoteSelect }: NoteEditorPropsWithCallback
   const [content, setContent] = useState<Block[] | null>(null)
   // Track if we're loading content to prevent false saves
   const isLoadingContent = useRef(true)
+  // Ref for editor container to handle copy events
+  const editorContainerRef = useRef<HTMLDivElement>(null)
 
   // Create editor instance
   const editor = useCreateBlockNote()
@@ -64,6 +66,28 @@ export function NoteEditor({ noteId, onNoteSelect }: NoteEditorPropsWithCallback
       }, 100)
     }
   }, [note, editor])
+
+  // Handle copy events to replace markdown with plain text
+  useEffect(() => {
+    const container = editorContainerRef.current
+    if (!container) return
+
+    const handleCopy = (e: ClipboardEvent) => {
+      const html = e.clipboardData?.getData('text/html')
+      if (!html) return
+
+      // Extract plain text from HTML
+      const temp = document.createElement('div')
+      temp.innerHTML = html
+      const plainText = temp.textContent || temp.innerText || ''
+
+      // Override the text/plain with actual plain text (not markdown)
+      e.clipboardData?.setData('text/plain', plainText)
+    }
+
+    container.addEventListener('copy', handleCopy)
+    return () => container.removeEventListener('copy', handleCopy)
+  }, [])
 
   // Memoize the formatted date
   const formattedDate = useMemo(() => {
@@ -166,7 +190,7 @@ export function NoteEditor({ noteId, onNoteSelect }: NoteEditorPropsWithCallback
       </div>
 
       {/* Editor */}
-      <div className="flex-1 overflow-auto">
+      <div ref={editorContainerRef} className="flex-1 overflow-auto">
         <BlockNoteView
           editor={editor}
           onChange={() => {
