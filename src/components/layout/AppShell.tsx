@@ -10,6 +10,7 @@ import { CircularButton } from '@/components/ui/CircularButton'
 import { EdgeSwipeBack } from '@/components/ui/EdgeSwipeBack'
 import { NoteInfoSheet } from '@/components/editor/NoteInfoSheet'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
+import { AIFloatingButton } from '@/components/ai/AIFloatingButton'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
@@ -18,10 +19,13 @@ import { DragOverlay } from '@/components/ui/DragOverlay'
 import { DragProvider } from '@/context/DragContext'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
 import { useCreateNote, useNotes, useSearchNotes } from '@/hooks/useNotes'
+import { useSemanticSearch } from '@/hooks/useAI'
 import { NotesListView } from '@/components/notes/NotesListView'
+import { SemanticSearchResults } from '@/components/search/SemanticSearchResults'
 import { useFolders } from '@/hooks/useFolders'
 import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
+import { cn } from '@/lib/utils'
 
 export function AppShell() {
   // undefined = "All Notes", string = specific folder ID
@@ -33,6 +37,7 @@ export function AppShell() {
   const [isShortcutsModalOpen, setIsShortcutsModalOpen] = useState(false)
   const [showSaveFeedback, setShowSaveFeedback] = useState(false)
   const [isTrashView, setIsTrashView] = useState(false)
+  const [isSmartSearch, setIsSmartSearch] = useState(false)
 
   // Panel resize state (desktop only)
   const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
@@ -62,9 +67,23 @@ export function AppShell() {
   const { data: notes } = useNotes(selectedFolderId)
   const noteCount = notes?.length || 0
 
-  // Search results
+  // Search results - text search
   const { data: searchResults } = useSearchNotes(searchQuery)
-  const searchResultCount = searchResults?.length || 0
+
+  // Semantic search
+  const { results: semanticResults, isSearching: isSemanticSearching, search: semanticSearch } = useSemanticSearch()
+
+  // Combined search results count
+  const searchResultCount = isSmartSearch
+    ? semanticResults?.length || 0
+    : searchResults?.length || 0
+
+  // Trigger semantic search when query changes and smart search is enabled
+  useEffect(() => {
+    if (isSmartSearch && searchQuery.length >= 2) {
+      semanticSearch(searchQuery)
+    }
+  }, [isSmartSearch, searchQuery, semanticSearch])
 
   // Speech recognition for voice search
   const { isListening, startListening, stopListening } = useSpeechRecognition({
@@ -316,22 +335,51 @@ export function AppShell() {
                       <h1 className="text-[34px] font-bold leading-tight tracking-tight text-foreground">
                         Search
                       </h1>
-                      <p className="text-[17px] text-muted-foreground mb-3">
-                        {searchQuery ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}` : 'Type to search'}
-                      </p>
+                      <div className="flex items-center justify-between mb-3">
+                        <p className="text-[17px] text-muted-foreground">
+                          {searchQuery
+                            ? `${searchResultCount} result${searchResultCount !== 1 ? 's' : ''}`
+                            : 'Type to search'}
+                        </p>
+                        {/* Smart Search Toggle */}
+                        <button
+                          onClick={() => setIsSmartSearch(!isSmartSearch)}
+                          className={cn(
+                            'flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium transition-colors',
+                            isSmartSearch
+                              ? 'bg-primary text-primary-foreground'
+                              : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          <Sparkles className="h-3.5 w-3.5" />
+                          Smart
+                        </button>
+                      </div>
                     </div>
 
                     {/* Search Results - scrollable */}
                     <div className="flex-1 min-h-0 overflow-hidden">
                       {searchQuery.length >= 2 ? (
-                        <NotesListView
-                          searchQuery={searchQuery}
-                          selectedNoteId={selectedNoteId}
-                          onNoteSelect={handleNoteSelect}
-                        />
+                        isSmartSearch ? (
+                          <SemanticSearchResults
+                            results={semanticResults}
+                            isLoading={isSemanticSearching}
+                            selectedNoteId={selectedNoteId}
+                            onNoteSelect={handleNoteSelect}
+                          />
+                        ) : (
+                          <NotesListView
+                            searchQuery={searchQuery}
+                            selectedNoteId={selectedNoteId}
+                            onNoteSelect={handleNoteSelect}
+                          />
+                        )
                       ) : (
-                        <div className="flex items-center justify-center h-full text-muted-foreground">
+                        <div className="flex flex-col items-center justify-center h-full text-muted-foreground">
                           <p>Enter at least 2 characters to search</p>
+                          {isSmartSearch && (
+                            <p className="text-sm mt-1 text-primary">AI-powered search enabled</p>
+                          )}
                         </div>
                       )}
                     </div>
@@ -424,6 +472,24 @@ export function AppShell() {
           noteId={selectedNoteId || undefined}
           onNoteSelect={setSelectedNoteId}
         />
+
+        {/* AI Floating Action Button - only in editor view */}
+        {activeView === 'editor' && selectedNoteId && !isAIChatOpen && (
+          <AIFloatingButton
+            onAskAI={() => setIsAIChatOpen(true)}
+            onSummarize={() => {
+              // TODO: Implement summarize action
+              setIsAIChatOpen(true)
+            }}
+            onImproveWriting={() => {
+              // TODO: Implement improve writing action
+              setIsAIChatOpen(true)
+            }}
+            onSuggestTags={() => {
+              // TODO: Implement suggest tags action
+            }}
+          />
+        )}
 
         {/* Import Dialog */}
         <ImportDialog
