@@ -1,12 +1,13 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 import { NoteCard } from './NoteCard'
 import { TrashNoteCard } from './TrashNoteCard'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotes, useSearchNotes, useTrashNotes } from '@/hooks/useNotes'
 import { useFoldersFlat } from '@/hooks/useFolders'
-import { groupNotesByDate, DATE_GROUP_LABELS } from '@/lib/dateUtils'
-import type { DateGroup } from '@/lib/types'
+import { groupNotesByDate, getGroupOrder, getGroupLabel } from '@/lib/dateUtils'
+import { cn } from '@/lib/utils'
 
 interface NotesListViewProps {
   folderId?: string | null
@@ -15,15 +16,6 @@ interface NotesListViewProps {
   searchQuery?: string
   isTrashView?: boolean
 }
-
-const GROUP_ORDER: DateGroup[] = [
-  'pinned',
-  'today',
-  'yesterday',
-  'previous7Days',
-  'previous30Days',
-  'older',
-]
 
 export function NotesListView({
   folderId,
@@ -38,6 +30,9 @@ export function NotesListView({
   const { data: trashNotes, isLoading: isTrashLoading } = useTrashNotes()
   const { data: folders } = useFoldersFlat()
 
+  // Track collapsed sections
+  const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set())
+
   const notes = isTrashView ? trashNotes : (isSearching ? searchResults : folderNotes)
   const isLoading = isTrashView ? isTrashLoading : (isSearching ? isSearchLoading : isFolderLoading)
 
@@ -49,6 +44,18 @@ export function NotesListView({
 
   // Only show folder colors in "All Notes" view (folderId is undefined/null) or when searching
   const showFolderColors = folderId === undefined || folderId === null || isSearching
+
+  const toggleSection = (group: string) => {
+    setCollapsedSections(prev => {
+      const next = new Set(prev)
+      if (next.has(group)) {
+        next.delete(group)
+      } else {
+        next.add(group)
+      }
+      return next
+    })
+  }
 
   if (isLoading) {
     return (
@@ -97,30 +104,54 @@ export function NotesListView({
   }
 
   const grouped = groupNotesByDate(notes)
+  const groupOrder = getGroupOrder(grouped)
 
   return (
     <ScrollArea className="h-full">
-      <div className="px-4 py-3 space-y-6">
-        {GROUP_ORDER.map((group) => {
+      <div className="py-1">
+        {groupOrder.map((group) => {
           const groupNotes = grouped[group]
-          if (groupNotes.length === 0) return null
+          if (!groupNotes || groupNotes.length === 0) return null
+
+          const isCollapsed = collapsedSections.has(group)
+          const label = getGroupLabel(group)
 
           return (
-            <div key={group}>
-              <h3 className="text-[13px] font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-                {DATE_GROUP_LABELS[group]}
-              </h3>
-              <div className="space-y-2">
-                {groupNotes.map((note) => (
-                  <NoteCard
-                    key={note.id}
-                    note={note}
-                    isSelected={note.id === selectedNoteId}
-                    onClick={() => onNoteSelect(note.id)}
-                    folderColor={showFolderColors && note.folder_id ? folderColorMap.get(note.folder_id) : undefined}
-                  />
-                ))}
-              </div>
+            <div key={group} className="mb-2">
+              {/* Section Header - Apple Notes style */}
+              <button
+                onClick={() => toggleSection(group)}
+                className="w-full flex items-center justify-between px-4 py-2 hover:bg-accent/50 transition-colors"
+              >
+                <span className="text-[17px] font-semibold text-foreground">
+                  {label}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    'h-5 w-5 text-muted-foreground transition-transform duration-200',
+                    isCollapsed && '-rotate-90'
+                  )}
+                />
+              </button>
+
+              {/* Section Divider */}
+              <div className="mx-4 border-b border-border" />
+
+              {/* Notes List */}
+              {!isCollapsed && (
+                <div className="divide-y divide-border">
+                  {groupNotes.map((note) => (
+                    <div key={note.id} className="px-4">
+                      <NoteCard
+                        note={note}
+                        isSelected={note.id === selectedNoteId}
+                        onClick={() => onNoteSelect(note.id)}
+                        folderColor={showFolderColors && note.folder_id ? folderColorMap.get(note.folder_id) : undefined}
+                      />
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )
         })}

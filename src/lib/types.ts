@@ -80,17 +80,6 @@ export interface NotePreview {
   folder_id: string | null
 }
 
-export type DateGroup = 'pinned' | 'today' | 'yesterday' | 'previous7Days' | 'previous30Days' | 'older'
-
-export interface GroupedNotes {
-  pinned: NotePreview[]
-  today: NotePreview[]
-  yesterday: NotePreview[]
-  previous7Days: NotePreview[]
-  previous30Days: NotePreview[]
-  older: NotePreview[]
-}
-
 // Form types
 export interface CreateNoteInput {
   title?: string
