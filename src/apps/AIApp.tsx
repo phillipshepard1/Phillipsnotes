@@ -89,7 +89,9 @@ function AIAppContent() {
       })
 
       // Navigate to Notes app with the new note
-      window.location.href = `/?noteId=${note.id}`
+      // Use window.open to try to launch the Notes PWA instead of in-app browser
+      const url = `${window.location.origin}/?noteId=${note.id}`
+      window.open(url, '_blank', 'noopener,noreferrer')
     } catch (error) {
       console.error('Failed to save chat as note:', error)
       setIsSaving(false)

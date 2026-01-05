@@ -108,7 +108,10 @@ function ImportAppContent() {
 
   const handleViewNote = () => {
     if (successNoteId) {
-      window.location.href = `/?noteId=${successNoteId}`
+      // Use window.open to try to launch the Notes PWA instead of in-app browser
+      // On iOS, this opens Safari which may redirect to the installed PWA
+      const url = `${window.location.origin}/?noteId=${successNoteId}`
+      window.open(url, '_blank', 'noopener,noreferrer')
     }
   }
 
