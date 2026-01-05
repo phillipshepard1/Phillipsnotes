@@ -83,9 +83,6 @@ export function ChatInput({ onSend, disabled, placeholder = 'Ask about your note
           )}
         </button>
       </div>
-      <div className="mt-2 text-xs text-muted-foreground/60 text-center">
-        Press Enter to send, Shift+Enter for new line
-      </div>
     </div>
   )
 }
