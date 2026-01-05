@@ -10,8 +10,8 @@ import { cn } from '@/lib/utils'
 import type { FolderWithChildren } from '@/lib/types'
 
 interface FolderTreeProps {
-  selectedFolderId: string | null
-  onFolderSelect: (id: string | null) => void
+  selectedFolderId: string | undefined
+  onFolderSelect: (id: string | undefined) => void
   isTrashSelected?: boolean
   onTrashSelect?: () => void
 }
@@ -48,11 +48,11 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
       <div className="p-2 space-y-1">
         {/* All Notes */}
         <button
-          onClick={() => onFolderSelect(null)}
+          onClick={() => onFolderSelect(undefined)}
           className={cn(
             'flex items-center gap-2 w-full px-2 py-1.5 rounded-md text-sm transition-colors',
             'hover:bg-secondary',
-            selectedFolderId === null && !isTrashSelected && 'bg-primary/10 text-primary'
+            selectedFolderId === undefined && !isTrashSelected && 'bg-primary/10 text-primary'
           )}
         >
           <FileText className="h-4 w-4" />
@@ -129,8 +129,8 @@ export function FolderTree({ selectedFolderId, onFolderSelect, isTrashSelected, 
 
 interface FolderNodeProps {
   folder: FolderWithChildren
-  selectedId: string | null
-  onSelect: (id: string | null) => void
+  selectedId: string | undefined
+  onSelect: (id: string | undefined) => void
   level: number
 }
 
@@ -149,7 +149,7 @@ function FolderNode({ folder, selectedId, onSelect, level }: FolderNodeProps) {
       await deleteFolder.mutateAsync(folder.id)
       setShowDeleteDialog(false)
       if (isSelected) {
-        onSelect(null)
+        onSelect(undefined)
       }
     } catch (error) {
       console.error('Failed to delete folder:', error)

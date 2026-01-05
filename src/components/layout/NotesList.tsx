@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils'
 import { useState } from 'react'
 
 interface NotesListProps {
-  folderId: string | null
+  folderId: string | null | undefined
   selectedNoteId: string | null
   onNoteSelect: (id: string) => void
   searchQuery: string

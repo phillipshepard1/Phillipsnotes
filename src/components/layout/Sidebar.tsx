@@ -7,8 +7,8 @@ import { useAuth } from '@/hooks/useAuth'
 import { cn } from '@/lib/utils'
 
 interface SidebarProps {
-  selectedFolderId: string | null
-  onFolderSelect: (id: string | null) => void
+  selectedFolderId: string | undefined
+  onFolderSelect: (id: string | undefined) => void
   onSearch: (query: string) => void
   onImportClick?: () => void
   searchInputRef?: React.RefObject<HTMLInputElement | null>

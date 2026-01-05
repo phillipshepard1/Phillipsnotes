@@ -6,18 +6,19 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { LargeTitle } from '@/components/ui/LargeTitle'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
 import { useFolders, useCreateFolder, useDeleteFolder } from '@/hooks/useFolders'
-import { useAllNotes } from '@/hooks/useNotes'
+import { useNotes } from '@/hooks/useNotes'
 import { cn } from '@/lib/utils'
 import type { FolderWithChildren } from '@/lib/types'
 
 interface FolderListProps {
-  onFolderSelect: (id: string | null) => void
+  onFolderSelect: (id: string | undefined) => void
   onTrashSelect?: () => void
 }
 
 export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
   const { data: folders, isLoading: foldersLoading } = useFolders()
-  const { data: allNotes, isLoading: notesLoading } = useAllNotes()
+  // Use useNotes() with undefined to get ALL notes (shares cache with other components)
+  const { data: allNotes, isLoading: notesLoading } = useNotes()
   const createFolder = useCreateFolder()
   const deleteFolder = useDeleteFolder()
 
@@ -202,7 +203,7 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
               isEditMode={isEditMode}
               isSelected={false}
               onSelect={() => {}}
-              onClick={() => !isEditMode && onFolderSelect(null)}
+              onClick={() => !isEditMode && onFolderSelect(undefined)}
             />
           </div>
 

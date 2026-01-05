@@ -20,7 +20,8 @@ import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
 import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 
 export function AppShell() {
-  const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
+  // undefined = "All Notes", string = specific folder ID
+  const [selectedFolderId, setSelectedFolderId] = useState<string | undefined>(undefined)
   const [selectedNoteId, setSelectedNoteId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [isAIChatOpen, setIsAIChatOpen] = useState(false)
@@ -58,7 +59,7 @@ export function AppShell() {
     },
   })
 
-  const handleFolderSelect = (folderId: string | null) => {
+  const handleFolderSelect = (folderId: string | undefined) => {
     setSelectedFolderId(folderId)
     setSelectedNoteId(null)
     setSearchQuery('')
@@ -70,7 +71,7 @@ export function AppShell() {
 
   const handleTrashSelect = () => {
     setIsTrashView(true)
-    setSelectedFolderId(null)
+    setSelectedFolderId(undefined)
     setSelectedNoteId(null)
     setSearchQuery('')
     if (isMobile) {

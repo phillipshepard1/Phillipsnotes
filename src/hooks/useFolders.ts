@@ -55,7 +55,7 @@ export function useFoldersFlat() {
   })
 }
 
-export function useFolder(id: string | null) {
+export function useFolder(id: string | null | undefined) {
   return useQuery({
     queryKey: ['folder', id],
     queryFn: () => foldersApi.getFolder(id!),
