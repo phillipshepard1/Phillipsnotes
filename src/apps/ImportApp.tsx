@@ -9,6 +9,7 @@ import { useImport } from '@/hooks/useImport'
 import { YouTubeImport } from '@/components/import/YouTubeImport'
 import { TextImport } from '@/components/import/TextImport'
 import { WebImport } from '@/components/import/WebImport'
+import { UpdatePrompt } from '@/components/pwa'
 import {
   Download,
   Youtube,
@@ -315,6 +316,7 @@ export default function ImportApp() {
       <ThemeProvider>
         <AuthProvider>
           <ImportAppContent />
+          <UpdatePrompt />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>

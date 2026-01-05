@@ -9,6 +9,7 @@ import { useAIChat, useSemanticSearch } from '@/hooks/useAI'
 import { ChatMessage } from '@/components/ai/ChatMessage'
 import { ChatInput } from '@/components/ai/ChatInput'
 import { SemanticSearchResults } from '@/components/search/SemanticSearchResults'
+import { UpdatePrompt } from '@/components/pwa'
 import { Sparkles, Search, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
@@ -286,6 +287,7 @@ export default function AIApp() {
       <ThemeProvider>
         <AuthProvider>
           <AIAppContent />
+          <UpdatePrompt />
         </AuthProvider>
       </ThemeProvider>
     </QueryClientProvider>
