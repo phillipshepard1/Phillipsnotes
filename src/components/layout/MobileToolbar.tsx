@@ -58,19 +58,19 @@ export function MobileToolbar({
 
   return (
     <div
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-md"
+      className="fixed inset-x-0 bottom-0 z-50 bg-background/80 backdrop-blur-xl border-t border-border/50"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <div className="flex h-14 items-center gap-2 px-3">
-        {/* Search Bar */}
+      <div className="flex items-center gap-3 px-4 py-3">
+        {/* Search Bar - Apple style */}
         <div
           className={cn(
-            'relative flex flex-1 items-center rounded-xl transition-all duration-200',
-            'bg-muted/80',
-            isSearchFocused && 'bg-muted ring-2 ring-primary/20'
+            'relative flex flex-1 items-center rounded-2xl transition-all duration-200',
+            'bg-muted/60',
+            isSearchFocused && 'bg-muted ring-2 ring-primary/30'
           )}
         >
-          <Search className="absolute left-3 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute left-4 h-5 w-5 text-muted-foreground/70" />
           <input
             ref={inputRef}
             type="text"
@@ -85,8 +85,8 @@ export function MobileToolbar({
             }}
             placeholder="Search"
             className={cn(
-              'h-10 w-full bg-transparent pl-9 pr-16 text-sm text-foreground',
-              'placeholder:text-muted-foreground',
+              'h-12 w-full bg-transparent pl-12 pr-20 text-[17px] text-foreground',
+              'placeholder:text-muted-foreground/60',
               'outline-none'
             )}
           />
@@ -99,9 +99,9 @@ export function MobileToolbar({
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.8 }}
                 onClick={handleClearSearch}
-                className="absolute right-10 flex h-5 w-5 items-center justify-center rounded-full bg-muted-foreground/30"
+                className="absolute right-14 flex h-6 w-6 items-center justify-center rounded-full bg-muted-foreground/40"
               >
-                <X className="h-3 w-3 text-background" />
+                <X className="h-3.5 w-3.5 text-background" />
               </motion.button>
             )}
           </AnimatePresence>
@@ -110,43 +110,42 @@ export function MobileToolbar({
           <button
             onClick={handleMicClick}
             className={cn(
-              'absolute right-2 flex h-7 w-7 items-center justify-center rounded-full transition-colors',
+              'absolute right-3 flex h-9 w-9 items-center justify-center rounded-full transition-colors',
               isListening
                 ? 'bg-destructive text-destructive-foreground'
-                : 'text-muted-foreground active:bg-muted-foreground/20'
+                : 'text-muted-foreground/70 active:bg-muted-foreground/20'
             )}
           >
-            <Mic className={cn('h-4 w-4', isListening && 'animate-pulse')} />
+            <Mic className={cn('h-5 w-5', isListening && 'animate-pulse')} />
           </button>
         </div>
 
-        {/* New Note Button */}
+        {/* New Note Button - Apple style compose icon */}
         <motion.button
-          whileTap={{ scale: 0.95 }}
+          whileTap={{ scale: 0.92 }}
           onClick={onCreateNote}
           className={cn(
-            'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl',
-            'bg-primary/10 text-primary',
-            'active:bg-primary/20'
+            'flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl',
+            'bg-primary text-primary-foreground',
+            'shadow-sm active:opacity-80'
           )}
         >
-          {/* Apple Notes style: square with pencil */}
+          {/* Apple-style square with pencil icon */}
           <svg
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
-            strokeWidth={1.5}
-            className="h-5 w-5"
+            strokeWidth={2}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="h-6 w-6"
           >
-            {/* Square/page */}
-            <rect x="4" y="4" width="14" height="16" rx="2" />
-            {/* Pencil line */}
-            <path d="M8 12h6M8 8h6M8 16h3" />
+            {/* Square/paper */}
+            <rect x="3" y="3" width="14" height="18" rx="2" />
             {/* Pencil */}
-            <path
-              d="M16 2l4 4-8 8H8v-4l8-8z"
-              strokeLinejoin="round"
-            />
+            <path d="M14 3v4a1 1 0 0 0 1 1h4" />
+            <path d="M17 21v-7" />
+            <path d="M14 18h6" />
           </svg>
         </motion.button>
       </div>
