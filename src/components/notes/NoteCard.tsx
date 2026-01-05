@@ -81,6 +81,8 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
+    // Reset long pressing state when mouse is released
+    isLongPressing.current = false
   }, [])
 
   const handleMouseLeave = useCallback(() => {
@@ -89,6 +91,8 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
       clearTimeout(longPressTimer.current)
       longPressTimer.current = null
     }
+    // Reset long pressing state when mouse leaves
+    isLongPressing.current = false
   }, [])
 
   const handleClick = useCallback((e: React.MouseEvent) => {
