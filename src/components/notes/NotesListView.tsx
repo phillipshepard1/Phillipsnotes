@@ -1,8 +1,10 @@
+import { useMemo } from 'react'
 import { NoteCard } from './NoteCard'
 import { TrashNoteCard } from './TrashNoteCard'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { useNotes, useSearchNotes, useTrashNotes } from '@/hooks/useNotes'
+import { useFoldersFlat } from '@/hooks/useFolders'
 import { groupNotesByDate, DATE_GROUP_LABELS } from '@/lib/dateUtils'
 import type { DateGroup } from '@/lib/types'
 
@@ -34,9 +36,19 @@ export function NotesListView({
   const { data: folderNotes, isLoading: isFolderLoading } = useNotes(isSearching ? undefined : folderId)
   const { data: searchResults, isLoading: isSearchLoading } = useSearchNotes(searchQuery)
   const { data: trashNotes, isLoading: isTrashLoading } = useTrashNotes()
+  const { data: folders } = useFoldersFlat()
 
   const notes = isTrashView ? trashNotes : (isSearching ? searchResults : folderNotes)
   const isLoading = isTrashView ? isTrashLoading : (isSearching ? isSearchLoading : isFolderLoading)
+
+  // Create a map of folder_id to color for quick lookup
+  const folderColorMap = useMemo(() => {
+    if (!folders) return new Map<string, string>()
+    return new Map(folders.filter(f => f.color).map(f => [f.id, f.color!]))
+  }, [folders])
+
+  // Only show folder colors in "All Notes" view (folderId is undefined/null) or when searching
+  const showFolderColors = folderId === undefined || folderId === null || isSearching
 
   if (isLoading) {
     return (
@@ -105,6 +117,7 @@ export function NotesListView({
                     note={note}
                     isSelected={note.id === selectedNoteId}
                     onClick={() => onNoteSelect(note.id)}
+                    folderColor={showFolderColors && note.folder_id ? folderColorMap.get(note.folder_id) : undefined}
                   />
                 ))}
               </div>

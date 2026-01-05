@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { ChevronRight, Folder, FolderOpen, FileText, Plus, MoreHorizontal, Trash2, Pencil } from 'lucide-react'
+import { ChevronRight, Folder, FolderOpen, FileText, Plus, MoreHorizontal, Trash2, Pencil, Palette } from 'lucide-react'
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator } from '@/components/ui/dropdown-menu'
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
+import { FolderColorPicker } from '@/components/ui/FolderColorPicker'
 import { useFolders, useCreateFolder, useDeleteFolder, useUpdateFolder } from '@/hooks/useFolders'
 import { useMoveNote } from '@/hooks/useNotes'
 import { useDragOptional } from '@/context/DragContext'
@@ -180,6 +182,7 @@ function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: Folder
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isRenaming, setIsRenaming] = useState(false)
   const [renameName, setRenameName] = useState(folder.name)
+  const [showColorPicker, setShowColorPicker] = useState(false)
   const deleteFolder = useDeleteFolder()
   const updateFolder = useUpdateFolder()
   const moveNote = useMoveNote()
@@ -243,6 +246,15 @@ function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: Folder
     }
   }
 
+  const handleColorChange = async (color: string | null) => {
+    try {
+      await updateFolder.mutateAsync({ id: folder.id, updates: { color } })
+      setShowColorPicker(false)
+    } catch (error) {
+      console.error('Failed to update folder color:', error)
+    }
+  }
+
   return (
     <>
       <Collapsible open={isOpen} onOpenChange={setIsOpen}>
@@ -298,6 +310,12 @@ function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: Folder
               ) : (
                 <Folder className="h-4 w-4" />
               )}
+              {folder.color && (
+                <div
+                  className="h-2.5 w-2.5 rounded-full flex-shrink-0"
+                  style={{ backgroundColor: folder.color }}
+                />
+              )}
               <span className="truncate">{folder.name}</span>
             </button>
           )}
@@ -319,6 +337,10 @@ function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: Folder
               <DropdownMenuItem onClick={() => setIsRenaming(true)}>
                 <Pencil className="h-4 w-4" />
                 Rename
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setShowColorPicker(true)}>
+                <Palette className="h-4 w-4" />
+                Change color
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -358,6 +380,19 @@ function FolderNode({ folder, selectedId, onSelect, level, onNoteMoved }: Folder
         onConfirm={handleDelete}
         isLoading={deleteFolder.isPending}
       />
+
+      <Dialog open={showColorPicker} onOpenChange={setShowColorPicker}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>Choose Color for "{folder.name}"</DialogHeader>
+          <div className="py-4">
+            <FolderColorPicker
+              selectedColor={folder.color}
+              onColorSelect={handleColorChange}
+              className="justify-center"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

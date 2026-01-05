@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { X, Youtube, Loader2, ClipboardPaste } from 'lucide-react'
+import { X, Youtube, Loader2, ClipboardPaste, Globe } from 'lucide-react'
 import { Dialog, DialogContent, DialogHeader, DialogBody } from '@/components/ui/dialog'
 import { YouTubeImport } from './YouTubeImport'
 import { TextImport } from './TextImport'
+import { WebImport } from './WebImport'
 import { useImport } from '@/hooks/useImport'
 import { cn } from '@/lib/utils'
 
@@ -13,7 +14,7 @@ interface ImportDialogProps {
   onNoteCreated?: (noteId: string) => void
 }
 
-type TabId = 'text' | 'youtube'
+type TabId = 'text' | 'youtube' | 'web'
 
 const IMPORT_TABS: Array<{
   id: TabId
@@ -33,6 +34,12 @@ const IMPORT_TABS: Array<{
     icon: <Youtube className="w-4 h-4" />,
     description: 'Import transcript from a YouTube video',
   },
+  {
+    id: 'web',
+    label: 'Web URL',
+    icon: <Globe className="w-4 h-4" />,
+    description: 'Import article content from any web page',
+  },
 ]
 
 export function ImportDialog({
@@ -47,6 +54,7 @@ export function ImportDialog({
   const {
     importYouTube,
     importFromText,
+    importWebUrl,
     progress,
     isImporting,
   } = useImport({
@@ -70,6 +78,11 @@ export function ImportDialog({
   const handleTextImport = async (text: string, formatAsChat: boolean) => {
     setError(null)
     await importFromText(text, formatAsChat)
+  }
+
+  const handleWebImport = async (url: string, includeSummary: boolean) => {
+    setError(null)
+    await importWebUrl(url, includeSummary)
   }
 
   const activeTabInfo = IMPORT_TABS.find((t) => t.id === activeTab)
@@ -148,14 +161,21 @@ export function ImportDialog({
           )}
 
           {/* Content based on active tab */}
-          {activeTab === 'text' ? (
+          {activeTab === 'text' && (
             <TextImport
               onImport={handleTextImport}
               disabled={isImporting}
             />
-          ) : (
+          )}
+          {activeTab === 'youtube' && (
             <YouTubeImport
               onImport={handleYouTubeImport}
+              disabled={isImporting}
+            />
+          )}
+          {activeTab === 'web' && (
+            <WebImport
+              onImport={handleWebImport}
               disabled={isImporting}
             />
           )}

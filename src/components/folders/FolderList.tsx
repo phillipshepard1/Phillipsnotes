@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Folder, FolderPlus, ChevronRight, Trash2, FileText, GripVertical, Check } from 'lucide-react'
+import { Folder, FolderPlus, ChevronRight, Trash2, FileText, GripVertical, Check, Palette } from 'lucide-react'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Skeleton } from '@/components/ui/skeleton'
 import { ConfirmDialog } from '@/components/ui/confirm-dialog'
-import { useFolders, useCreateFolder, useDeleteFolder } from '@/hooks/useFolders'
+import { Dialog, DialogContent, DialogHeader } from '@/components/ui/dialog'
+import { FolderColorPicker } from '@/components/ui/FolderColorPicker'
+import { useFolders, useCreateFolder, useDeleteFolder, useUpdateFolder } from '@/hooks/useFolders'
 import { useNotes } from '@/hooks/useNotes'
 import { cn } from '@/lib/utils'
 import type { FolderWithChildren } from '@/lib/types'
@@ -20,12 +22,14 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
   const { data: allNotes, isLoading: notesLoading } = useNotes()
   const createFolder = useCreateFolder()
   const deleteFolder = useDeleteFolder()
+  const updateFolder = useUpdateFolder()
 
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedFolderIds, setSelectedFolderIds] = useState<Set<string>>(new Set())
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isCreatingFolder, setIsCreatingFolder] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+  const [colorPickerFolder, setColorPickerFolder] = useState<FolderWithChildren | null>(null)
 
   // Calculate note counts per folder
   const noteCounts = useMemo(() => {
@@ -94,6 +98,16 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
       }
       return next
     })
+  }
+
+  const handleColorChange = async (color: string | null) => {
+    if (!colorPickerFolder) return
+    try {
+      await updateFolder.mutateAsync({ id: colorPickerFolder.id, updates: { color } })
+      setColorPickerFolder(null)
+    } catch (error) {
+      console.error('Failed to update folder color:', error)
+    }
   }
 
   const isLoading = foldersLoading || notesLoading
@@ -216,11 +230,13 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
                   key={folder.id}
                   icon={<Folder className="h-5 w-5 text-primary" />}
                   name={folder.name}
+                  color={folder.color}
                   count={noteCounts.get(folder.id) || 0}
                   isEditMode={isEditMode}
                   isSelected={selectedFolderIds.has(folder.id)}
                   onSelect={() => toggleFolderSelection(folder.id)}
                   onClick={() => !isEditMode && onFolderSelect(folder.id)}
+                  onColorEdit={() => setColorPickerFolder(folder)}
                   showDivider={index < flatFolders.length - 1}
                 />
               ))}
@@ -273,6 +289,20 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
         onConfirm={handleDeleteSelected}
         isLoading={deleteFolder.isPending}
       />
+
+      {/* Color Picker Dialog */}
+      <Dialog open={!!colorPickerFolder} onOpenChange={(open: boolean) => !open && setColorPickerFolder(null)}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>Choose Color for "{colorPickerFolder?.name}"</DialogHeader>
+          <div className="p-4">
+            <FolderColorPicker
+              selectedColor={colorPickerFolder?.color ?? null}
+              onColorSelect={handleColorChange}
+              className="justify-center"
+            />
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
@@ -280,22 +310,26 @@ export function FolderList({ onFolderSelect, onTrashSelect }: FolderListProps) {
 interface FolderItemProps {
   icon: React.ReactNode
   name: string
+  color?: string | null
   count?: number
   isEditMode: boolean
   isSelected: boolean
   onSelect: () => void
   onClick: () => void
+  onColorEdit?: () => void
   showDivider?: boolean
 }
 
 function FolderItem({
   icon,
   name,
+  color,
   count,
   isEditMode,
   isSelected,
   onSelect,
   onClick,
+  onColorEdit,
   showDivider = false,
 }: FolderItemProps) {
   return (
@@ -333,12 +367,33 @@ function FolderItem({
       {/* Folder Icon */}
       <div className="flex-shrink-0 mr-3">{icon}</div>
 
+      {/* Color Dot */}
+      {color && (
+        <div
+          className="h-3 w-3 rounded-full flex-shrink-0 mr-2"
+          style={{ backgroundColor: color }}
+        />
+      )}
+
       {/* Folder Name */}
       <span className="flex-1 text-[17px] text-foreground truncate">{name}</span>
 
       {/* Note Count */}
       {count !== undefined && (
         <span className="text-muted-foreground text-[17px] mr-2">{count}</span>
+      )}
+
+      {/* Color Edit Button (edit mode) */}
+      {isEditMode && onColorEdit && (
+        <div
+          onClick={(e) => {
+            e.stopPropagation()
+            onColorEdit()
+          }}
+          className="p-1.5 rounded-full active:bg-accent mr-1"
+        >
+          <Palette className="h-4 w-4 text-muted-foreground" />
+        </div>
       )}
 
       {/* Chevron (non-edit mode only) */}

@@ -1,12 +1,13 @@
 import { useState, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, Mic, X } from 'lucide-react'
+import { Search, Mic, X, Download } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface MobileToolbarProps {
   searchQuery: string
   onSearchChange: (query: string) => void
   onCreateNote: () => void
+  onImportClick?: () => void
   onVoiceSearch?: (transcript: string) => void
   isListening?: boolean
   onStartListening?: () => void
@@ -19,6 +20,7 @@ export function MobileToolbar({
   searchQuery,
   onSearchChange,
   onCreateNote,
+  onImportClick,
   isListening = false,
   onStartListening,
   onStopListening,
@@ -119,6 +121,21 @@ export function MobileToolbar({
             <Mic className={cn('h-5 w-5', isListening && 'animate-pulse')} />
           </button>
         </div>
+
+        {/* Import Button - subtle icon button */}
+        {onImportClick && (
+          <motion.button
+            whileTap={{ scale: 0.92 }}
+            onClick={onImportClick}
+            className={cn(
+              'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl',
+              'bg-muted/60 text-muted-foreground',
+              'active:bg-muted'
+            )}
+          >
+            <Download className="h-5 w-5" />
+          </motion.button>
+        )}
 
         {/* New Note Button - Apple style compose icon */}
         <motion.button

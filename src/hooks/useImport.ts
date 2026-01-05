@@ -99,6 +99,112 @@ export function useImport(options: UseImportOptions = {}) {
     }
   }, [createNoteMutation, options])
 
+  // Import from web URL
+  const importWebUrl = useCallback(async (url: string, includeSummary = false) => {
+    setProgress({
+      current: 0,
+      total: 1,
+      message: includeSummary ? 'Fetching article & generating summary...' : 'Fetching article...'
+    })
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        throw new Error('Not authenticated')
+      }
+
+      // Call the edge function to fetch and extract article content
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+      const functionUrl = `${supabaseUrl}/functions/v1/fetch-url`
+      const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY
+
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'apikey': anonKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url, includeSummary }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to fetch article')
+      }
+
+      const result = await response.json()
+
+      setProgress({ current: 0, total: 1, message: 'Creating note...' })
+
+      // Convert content to blocks
+      const blocks: unknown[] = []
+
+      // Add summary if included
+      if (result.summary) {
+        blocks.push({
+          type: 'heading',
+          props: { level: 2 },
+          content: [{ type: 'text', text: 'Summary' }],
+        })
+        blocks.push({
+          type: 'paragraph',
+          content: [{ type: 'text', text: result.summary }],
+        })
+        blocks.push({
+          type: 'paragraph',
+          content: [],
+        })
+      }
+
+      // Add main content as paragraphs
+      const paragraphs = result.content.split('\n\n')
+      for (const para of paragraphs) {
+        if (para.trim()) {
+          blocks.push({
+            type: 'paragraph',
+            content: [{ type: 'text', text: para }],
+          })
+        }
+      }
+
+      // Add source info at the end
+      blocks.push({
+        type: 'paragraph',
+        content: [],
+      })
+      blocks.push({
+        type: 'paragraph',
+        content: [
+          { type: 'text', text: 'Source: ' },
+          { type: 'link', href: url, content: [{ type: 'text', text: result.title || url }] },
+        ],
+      })
+
+      const noteId = await createNoteMutation.mutateAsync({
+        title: result.title || 'Imported Article',
+        content: blocks,
+        contentText: result.content,
+        sourceType: 'web_import',
+        sourceUrl: url,
+        sourceMetadata: {
+          domain: new URL(url).hostname,
+          author: result.author,
+          publishedDate: result.publishedDate,
+        },
+      })
+
+      setProgress(null)
+      options.onSuccess?.([noteId])
+      return [noteId]
+    } catch (error) {
+      setProgress(null)
+      const err = error instanceof Error ? error : new Error('Import failed')
+      options.onError?.(err)
+      throw err
+    }
+  }, [createNoteMutation, options])
+
   // Import from pasted text
   const importFromText = useCallback(async (text: string, formatAsChat: boolean) => {
     setProgress({ current: 0, total: 1, message: formatAsChat ? 'Formatting conversation...' : 'Creating note...' })
@@ -206,6 +312,7 @@ export function useImport(options: UseImportOptions = {}) {
   return {
     importYouTube,
     importFromText,
+    importWebUrl,
     progress,
     isImporting: progress !== null,
   }

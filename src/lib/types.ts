@@ -5,6 +5,7 @@ export interface Folder {
   user_id: string
   name: string
   parent_id: string | null
+  color: string | null
   is_smart: boolean
   smart_query: Record<string, unknown> | null
   created_at: string
@@ -113,4 +114,5 @@ export interface CreateFolderInput {
 export interface UpdateFolderInput {
   name?: string
   parent_id?: string | null
+  color?: string | null
 }

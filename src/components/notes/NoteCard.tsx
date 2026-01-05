@@ -17,9 +17,10 @@ interface NoteCardProps {
   note: NotePreview
   isSelected: boolean
   onClick: () => void
+  folderColor?: string
 }
 
-export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
+export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardProps) {
   const formattedDate = formatNoteDate(note.updated_at)
   const [showMoveDialog, setShowMoveDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -34,6 +35,7 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
   const startPosition = useRef({ x: 0, y: 0 })
 
   const isDragging = drag?.isDragging && drag?.draggedNote?.id === note.id
+  const isAnyDragging = drag?.isDragging ?? false
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Only enable on desktop and if drag context is available
@@ -104,7 +106,7 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
 
   return (
     <>
-      <SwipeableCard onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
+      <SwipeableCard disabled={isAnyDragging} onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
         <div
           onClick={handleClick}
           onMouseDown={handleMouseDown}
@@ -123,6 +125,12 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
           <div className="flex items-center gap-2 flex-1 min-w-0">
             {note.is_pinned && (
               <Pin className="h-4 w-4 text-orange-500 flex-shrink-0" />
+            )}
+            {folderColor && (
+              <div
+                className="h-3 w-3 rounded-full flex-shrink-0"
+                style={{ backgroundColor: folderColor }}
+              />
             )}
             <h3 className={cn(
               'text-[17px] font-semibold truncate',
