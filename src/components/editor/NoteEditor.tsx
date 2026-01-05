@@ -61,12 +61,16 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       const html = e.clipboardData?.getData('text/html')
       if (!html) return
 
-      // Extract plain text from HTML
+      // Extract plain text from HTML (removes markdown formatting like **)
       const temp = document.createElement('div')
       temp.innerHTML = html
       const plainText = temp.textContent || temp.innerText || ''
 
-      // Override the text/plain with actual plain text (not markdown)
+      // Prevent default to stop BlockNote's markdown from being used
+      e.preventDefault()
+
+      // Set both HTML (for rich paste) and clean plain text
+      e.clipboardData?.setData('text/html', html)
       e.clipboardData?.setData('text/plain', plainText)
     }
 
