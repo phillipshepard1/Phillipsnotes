@@ -3,7 +3,11 @@ import { useState, useEffect, useCallback } from 'react'
 const MOBILE_BREAKPOINT = 768
 const TABLET_BREAKPOINT = 1024
 
-export type MobileView = 'sidebar' | 'list' | 'editor'
+// New: Apple Notes-style navigation views
+export type MobileView = 'folders' | 'notes' | 'editor'
+
+// Legacy type for backwards compatibility during transition
+export type LegacyMobileView = 'sidebar' | 'list' | 'editor'
 
 export function useIsMobile() {
   const [isMobile, setIsMobile] = useState(false)
@@ -38,43 +42,61 @@ export function useIsTablet() {
   return isTablet
 }
 
-export function useMobileNavigation(initialView: MobileView = 'list') {
-  const [activeView, setActiveView] = useState<MobileView>(initialView)
+// Stack-based navigation for Apple Notes-style UX
+export function useMobileNavigation(initialView: MobileView = 'folders') {
+  const [navigationStack, setNavigationStack] = useState<MobileView[]>([initialView])
   const isMobile = useIsMobile()
 
+  // Current view is the top of the stack
+  const activeView = navigationStack[navigationStack.length - 1]
+
+  // Can go back if there's more than one item in the stack
+  const canGoBack = navigationStack.length > 1
+
+  // Push a new view onto the stack
   const navigateTo = useCallback((view: MobileView) => {
-    setActiveView(view)
+    setNavigationStack((stack) => {
+      // Don't push if we're already on this view
+      if (stack[stack.length - 1] === view) return stack
+      return [...stack, view]
+    })
   }, [])
 
-  const goToSidebar = useCallback(() => setActiveView('sidebar'), [])
-  const goToList = useCallback(() => setActiveView('list'), [])
-  const goToEditor = useCallback(() => setActiveView('editor'), [])
-
-  // When a note is selected on mobile, automatically go to editor
-  const selectNoteAndNavigate = useCallback((noteId: string | null, onSelect: (id: string | null) => void) => {
-    onSelect(noteId)
-    if (noteId && isMobile) {
-      setActiveView('editor')
-    }
-  }, [isMobile])
-
-  // Go back from editor to list
+  // Pop the stack (go back)
   const goBack = useCallback(() => {
-    if (activeView === 'editor') {
-      setActiveView('list')
-    } else if (activeView === 'sidebar') {
-      setActiveView('list')
-    }
-  }, [activeView])
+    setNavigationStack((stack) => {
+      if (stack.length <= 1) return stack
+      return stack.slice(0, -1)
+    })
+  }, [])
+
+  // Reset to a specific view (clears stack)
+  const resetTo = useCallback((view: MobileView) => {
+    setNavigationStack([view])
+  }, [])
+
+  // Convenience methods
+  const goToFolders = useCallback(() => resetTo('folders'), [resetTo])
+  const goToNotes = useCallback(() => navigateTo('notes'), [navigateTo])
+  const goToEditor = useCallback(() => navigateTo('editor'), [navigateTo])
+
+  // Legacy compatibility aliases
+  const goToSidebar = goToFolders
+  const goToList = goToNotes
 
   return {
     activeView,
+    navigationStack,
+    canGoBack,
     navigateTo,
+    goBack,
+    resetTo,
+    goToFolders,
+    goToNotes,
+    goToEditor,
+    // Legacy aliases
     goToSidebar,
     goToList,
-    goToEditor,
-    goBack,
-    selectNoteAndNavigate,
     isMobile,
   }
 }

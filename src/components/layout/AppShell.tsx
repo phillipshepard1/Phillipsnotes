@@ -1,18 +1,22 @@
 import { useState, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ArrowLeft } from 'lucide-react'
+import { ArrowLeft, MoreHorizontal } from 'lucide-react'
 import { Sidebar } from './Sidebar'
 import { NotesList } from './NotesList'
 import { EditorPanel } from './EditorPanel'
-import { MobileNav } from './MobileNav'
-import { MobileDrawer } from './MobileDrawer'
+import { MobileToolbar } from './MobileToolbar'
+import { FolderList } from '@/components/folders/FolderList'
+import { CircularButton } from '@/components/ui/CircularButton'
+import { LargeTitle } from '@/components/ui/LargeTitle'
 import { AIChatSidebar } from '@/components/ai/AIChatSidebar'
 import { ImportDialog } from '@/components/import/ImportDialog'
 import { ShortcutsModal } from '@/components/ui/ShortcutsModal'
 import { SaveFeedback } from '@/components/ui/SaveFeedback'
 import { useKeyboardShortcuts } from '@/hooks/useKeyboardShortcuts'
-import { useCreateNote } from '@/hooks/useNotes'
+import { useCreateNote, useNotes } from '@/hooks/useNotes'
+import { useFolders } from '@/hooks/useFolders'
 import { useIsMobile, useMobileNavigation } from '@/hooks/useMobile'
+import { useSpeechRecognition } from '@/hooks/useSpeechRecognition'
 
 export function AppShell() {
   const [selectedFolderId, setSelectedFolderId] = useState<string | null>(null)
@@ -28,7 +32,25 @@ export function AppShell() {
   const createNote = useCreateNote()
 
   const isMobile = useIsMobile()
-  const { activeView, navigateTo, goBack, goToList, goToEditor } = useMobileNavigation()
+  const { activeView, goBack, goToNotes, goToEditor } = useMobileNavigation()
+
+  // Get folder name for header
+  const { data: folders } = useFolders()
+  const selectedFolder = folders?.find((f) => f.id === selectedFolderId)
+  const folderName = selectedFolder?.name || 'All Notes'
+
+  // Get note count for header
+  const { data: notes } = useNotes(selectedFolderId)
+  const noteCount = notes?.length || 0
+
+  // Speech recognition for voice search
+  const { isListening, startListening, stopListening } = useSpeechRecognition({
+    onTranscript: (transcript, isFinal) => {
+      if (isFinal) {
+        setSearchQuery(transcript)
+      }
+    },
+  })
 
   const handleFolderSelect = (folderId: string | null) => {
     setSelectedFolderId(folderId)
@@ -36,7 +58,7 @@ export function AppShell() {
     setSearchQuery('')
     setIsTrashView(false)
     if (isMobile) {
-      goToList()
+      goToNotes()
     }
   }
 
@@ -46,15 +68,12 @@ export function AppShell() {
     setSelectedNoteId(null)
     setSearchQuery('')
     if (isMobile) {
-      goToList()
+      goToNotes()
     }
   }
 
   const handleSearch = (query: string) => {
     setSearchQuery(query)
-    if (query) {
-      setSelectedFolderId(null)
-    }
   }
 
   const handleNoteSelect = (noteId: string | null) => {
@@ -113,37 +132,82 @@ export function AppShell() {
     ],
   })
 
-  // Mobile Layout
+  // Mobile Layout - Apple Notes Style
   if (isMobile) {
     return (
       <div className="h-screen w-screen overflow-hidden bg-background">
         {/* Mobile Content Area */}
         <div
           className="h-full overflow-hidden"
-          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 64px)' }}
+          style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 56px)' }}
         >
           <AnimatePresence mode="wait">
-            {activeView === 'list' && (
+            {/* Folders View */}
+            {activeView === 'folders' && (
               <motion.div
-                key="list"
+                key="folders"
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 transition={{ duration: 0.15 }}
                 className="h-full"
               >
-                <NotesList
-                  folderId={selectedFolderId}
-                  selectedNoteId={selectedNoteId}
-                  onNoteSelect={handleNoteSelect}
-                  searchQuery={searchQuery}
-                  isTrashView={isTrashView}
-                  isMobile={true}
-                  onMenuClick={() => navigateTo('sidebar')}
+                <FolderList
+                  onFolderSelect={handleFolderSelect}
+                  onTrashSelect={handleTrashSelect}
                 />
               </motion.div>
             )}
 
+            {/* Notes List View */}
+            {activeView === 'notes' && (
+              <motion.div
+                key="notes"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.15 }}
+                className="h-full flex flex-col"
+              >
+                {/* Mobile Notes Header */}
+                <div
+                  className="flex items-center justify-between px-2"
+                  style={{
+                    paddingTop: 'calc(env(safe-area-inset-top) + 8px)',
+                    minHeight: 'calc(44px + env(safe-area-inset-top))',
+                  }}
+                >
+                  <CircularButton onClick={goBack} size="md">
+                    <ArrowLeft className="h-5 w-5" />
+                  </CircularButton>
+                  <CircularButton onClick={() => {}} size="md">
+                    <MoreHorizontal className="h-5 w-5" />
+                  </CircularButton>
+                </div>
+
+                {/* Large Title */}
+                <LargeTitle
+                  title={isTrashView ? 'Recently Deleted' : folderName}
+                  subtitle={`${noteCount} Note${noteCount !== 1 ? 's' : ''}`}
+                  className="mb-2"
+                />
+
+                {/* Notes List */}
+                <div className="flex-1 overflow-hidden">
+                  <NotesList
+                    folderId={selectedFolderId}
+                    selectedNoteId={selectedNoteId}
+                    onNoteSelect={handleNoteSelect}
+                    searchQuery={searchQuery}
+                    isTrashView={isTrashView}
+                    isMobile={true}
+                    hideHeader={true}
+                  />
+                </div>
+              </motion.div>
+            )}
+
+            {/* Editor View */}
             {activeView === 'editor' && (
               <motion.div
                 key="editor"
@@ -158,16 +222,15 @@ export function AppShell() {
                   className="flex items-center gap-2 border-b border-border px-2"
                   style={{
                     paddingTop: 'env(safe-area-inset-top)',
-                    minHeight: 'calc(3.5rem + env(safe-area-inset-top))'
+                    minHeight: 'calc(3.5rem + env(safe-area-inset-top))',
                   }}
                 >
-                  <button
-                    onClick={goBack}
-                    className="flex h-10 w-10 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
-                  >
+                  <CircularButton onClick={goBack} size="md">
                     <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <span className="text-sm font-medium text-muted-foreground">Back to Notes</span>
+                  </CircularButton>
+                  <span className="text-sm font-medium text-muted-foreground">
+                    Back to Notes
+                  </span>
                 </div>
                 <div className="flex-1 overflow-hidden">
                   <EditorPanel
@@ -183,30 +246,14 @@ export function AppShell() {
           </AnimatePresence>
         </div>
 
-        {/* Mobile Sidebar Drawer */}
-        <MobileDrawer
-          isOpen={activeView === 'sidebar'}
-          onClose={goToList}
-          title="Folders"
-        >
-          <Sidebar
-            selectedFolderId={selectedFolderId}
-            onFolderSelect={handleFolderSelect}
-            onSearch={handleSearch}
-            onImportClick={() => setIsImportDialogOpen(true)}
-            searchInputRef={searchInputRef}
-            isTrashSelected={isTrashView}
-            onTrashSelect={handleTrashSelect}
-            isMobile={true}
-          />
-        </MobileDrawer>
-
-        {/* Mobile Bottom Navigation */}
-        <MobileNav
-          activeView={activeView}
-          onNavigate={navigateTo}
+        {/* Mobile Bottom Toolbar */}
+        <MobileToolbar
+          searchQuery={searchQuery}
+          onSearchChange={handleSearch}
           onCreateNote={handleCreateNote}
-          hasSelectedNote={!!selectedNoteId}
+          isListening={isListening}
+          onStartListening={startListening}
+          onStopListening={stopListening}
         />
 
         {/* AI Chat Sidebar */}

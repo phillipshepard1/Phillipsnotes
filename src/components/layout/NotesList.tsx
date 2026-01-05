@@ -14,6 +14,7 @@ interface NotesListProps {
   isTrashView?: boolean
   isMobile?: boolean
   onMenuClick?: () => void
+  hideHeader?: boolean
 }
 
 export function NotesList({
@@ -24,6 +25,7 @@ export function NotesList({
   isTrashView = false,
   isMobile = false,
   onMenuClick,
+  hideHeader = false,
 }: NotesListProps) {
   const createNote = useCreateNote()
   const emptyTrash = useEmptyTrash()
@@ -63,56 +65,58 @@ export function NotesList({
 
   return (
     <div className="h-full flex flex-col bg-background">
-      {/* Header */}
-      <div
-        className={cn('p-3 border-b border-border', isMobile && 'pt-[env(safe-area-inset-top)]')}
-      >
-        <div className="flex items-center justify-between gap-2">
-          {/* Mobile menu button */}
-          {isMobile && onMenuClick && (
-            <button
-              onClick={onMenuClick}
-              className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
-            >
-              <Menu className="h-5 w-5" />
-            </button>
-          )}
-          <h2 className={cn(
-            'font-semibold truncate flex-1',
-            isTrashView ? 'text-destructive' : 'text-foreground'
-          )}>
-            {headerTitle}
-          </h2>
-          {isTrashView ? (
-            trashCount > 0 && (
+      {/* Header - can be hidden for mobile Apple Notes style */}
+      {!hideHeader && (
+        <div
+          className={cn('p-3 border-b border-border', isMobile && 'pt-[env(safe-area-inset-top)]')}
+        >
+          <div className="flex items-center justify-between gap-2">
+            {/* Mobile menu button */}
+            {isMobile && onMenuClick && (
               <button
-                onClick={() => setShowEmptyTrashDialog(true)}
+                onClick={onMenuClick}
+                className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full text-muted-foreground active:bg-accent"
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+            )}
+            <h2 className={cn(
+              'font-semibold truncate flex-1',
+              isTrashView ? 'text-destructive' : 'text-foreground'
+            )}>
+              {headerTitle}
+            </h2>
+            {isTrashView ? (
+              trashCount > 0 && (
+                <button
+                  onClick={() => setShowEmptyTrashDialog(true)}
+                  className={cn(
+                    'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors',
+                    'active:bg-destructive/10 text-destructive',
+                    'disabled:opacity-50'
+                  )}
+                  title="Empty trash"
+                >
+                  <Trash2 className="h-5 w-5" />
+                </button>
+              )
+            ) : !isMobile ? (
+              <button
+                onClick={handleCreateNote}
+                disabled={createNote.isPending}
                 className={cn(
                   'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors',
-                  'active:bg-destructive/10 text-destructive',
+                  'hover:bg-secondary active:bg-secondary',
                   'disabled:opacity-50'
                 )}
-                title="Empty trash"
+                title="New note"
               >
-                <Trash2 className="h-5 w-5" />
+                <Plus className="h-5 w-5 text-muted-foreground" />
               </button>
-            )
-          ) : !isMobile ? (
-            <button
-              onClick={handleCreateNote}
-              disabled={createNote.isPending}
-              className={cn(
-                'flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full transition-colors',
-                'hover:bg-secondary active:bg-secondary',
-                'disabled:opacity-50'
-              )}
-              title="New note"
-            >
-              <Plus className="h-5 w-5 text-muted-foreground" />
-            </button>
-          ) : null}
+            ) : null}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Notes list */}
       <div className="flex-1 overflow-hidden">
