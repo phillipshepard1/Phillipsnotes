@@ -43,7 +43,7 @@ export function TrashNoteCard({ note, isSelected, onClick }: TrashNoteCardProps)
 
   return (
     <>
-      <SwipeableCard onDelete={handleSwipeDelete} deleteLabel="Delete">
+      <SwipeableCard onDelete={handleSwipeDelete} showMove={false}>
         <div
           onClick={onClick}
           className={cn(

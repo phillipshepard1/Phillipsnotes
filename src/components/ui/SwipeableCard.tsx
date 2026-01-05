@@ -1,69 +1,59 @@
-import { useState, useRef } from 'react'
-import { motion, useMotionValue, useTransform, PanInfo, AnimatePresence } from 'framer-motion'
-import { Trash2 } from 'lucide-react'
+import { useState } from 'react'
+import { motion, useMotionValue, PanInfo } from 'framer-motion'
+import { Trash2, FolderInput } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface SwipeableCardProps {
   children: React.ReactNode
   onDelete: () => void
-  deleteLabel?: string
+  onMove?: () => void
+  showMove?: boolean
   className?: string
   disabled?: boolean
 }
 
-const DELETE_THRESHOLD = 80 // Pixels to swipe before triggering delete
-const FULL_SWIPE_THRESHOLD = 150 // Pixels to fully swipe and auto-delete
+const BUTTON_WIDTH = 80 // Width of each action button
+const SWIPE_THRESHOLD = 50 // Minimum swipe to trigger action reveal
 
 export function SwipeableCard({
   children,
   onDelete,
-  deleteLabel = 'Delete',
+  onMove,
+  showMove = true,
   className,
   disabled = false,
 }: SwipeableCardProps) {
-  const [isDragging, setIsDragging] = useState(false)
   const [showingActions, setShowingActions] = useState(false)
-  const constraintsRef = useRef<HTMLDivElement>(null)
-
   const x = useMotionValue(0)
-  const deleteOpacity = useTransform(x, [-FULL_SWIPE_THRESHOLD, -DELETE_THRESHOLD, 0], [1, 1, 0])
-  const deleteScale = useTransform(x, [-FULL_SWIPE_THRESHOLD, -DELETE_THRESHOLD, 0], [1.1, 1, 0.8])
-  const backgroundColor = useTransform(
-    x,
-    [-FULL_SWIPE_THRESHOLD, -DELETE_THRESHOLD, 0],
-    ['hsl(var(--destructive))', 'hsl(var(--destructive))', 'hsl(var(--destructive)/0)']
-  )
 
-  const handleDragStart = () => {
-    setIsDragging(true)
-  }
+  // Calculate total action width based on number of buttons
+  const actionWidth = showMove && onMove ? BUTTON_WIDTH * 2 : BUTTON_WIDTH
 
   const handleDragEnd = (_: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) => {
-    setIsDragging(false)
-
-    // Full swipe - auto delete
-    if (info.offset.x < -FULL_SWIPE_THRESHOLD || info.velocity.x < -800) {
-      onDelete()
-      return
-    }
-
-    // Partial swipe - show delete button
-    if (info.offset.x < -DELETE_THRESHOLD / 2) {
+    // Swipe left past threshold - show actions
+    if (info.offset.x < -SWIPE_THRESHOLD) {
       setShowingActions(true)
-    } else {
+    }
+    // Swipe right or small movement - hide actions
+    else if (info.offset.x > SWIPE_THRESHOLD || Math.abs(info.offset.x) < SWIPE_THRESHOLD) {
       setShowingActions(false)
     }
   }
 
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation()
+    setShowingActions(false)
     onDelete()
   }
 
-  const handleCardClick = () => {
-    if (showingActions) {
-      setShowingActions(false)
-    }
+  const handleMoveClick = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setShowingActions(false)
+    onMove?.()
+  }
+
+  const closeActions = () => {
+    setShowingActions(false)
   }
 
   if (disabled) {
@@ -71,57 +61,52 @@ export function SwipeableCard({
   }
 
   return (
-    <div
-      ref={constraintsRef}
-      className={cn('relative overflow-hidden rounded-xl', className)}
-      onClick={handleCardClick}
-    >
-      {/* Delete action background */}
-      <motion.div
-        className="absolute inset-y-0 right-0 flex items-center justify-end pr-4"
-        style={{ backgroundColor, width: FULL_SWIPE_THRESHOLD + 20 }}
-      >
-        <motion.button
+    <div className={cn('relative overflow-hidden rounded-xl', className)}>
+      {/* Action buttons background */}
+      <div className="absolute inset-y-0 right-0 flex">
+        {/* Move button */}
+        {showMove && onMove && (
+          <button
+            onClick={handleMoveClick}
+            className="flex w-20 flex-col items-center justify-center gap-1 bg-primary text-primary-foreground transition-colors active:bg-primary/90"
+          >
+            <FolderInput className="h-6 w-6" />
+            <span className="text-xs font-semibold">Move</span>
+          </button>
+        )}
+        {/* Delete button */}
+        <button
           onClick={handleDeleteClick}
-          style={{ opacity: deleteOpacity, scale: deleteScale }}
-          className="flex flex-col items-center gap-1 text-destructive-foreground"
+          className="flex w-20 flex-col items-center justify-center gap-1 bg-destructive text-destructive-foreground transition-colors active:bg-destructive/90"
         >
           <Trash2 className="h-6 w-6" />
-          <span className="text-xs font-medium">{deleteLabel}</span>
-        </motion.button>
-      </motion.div>
+          <span className="text-xs font-semibold">Trash</span>
+        </button>
+      </div>
 
       {/* Swipeable content */}
       <motion.div
         drag="x"
-        dragConstraints={{ left: -FULL_SWIPE_THRESHOLD - 20, right: 0 }}
+        dragConstraints={{ left: -actionWidth, right: 0 }}
         dragElastic={0.1}
         dragMomentum={false}
-        onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
-        animate={{ x: showingActions ? -DELETE_THRESHOLD : 0 }}
+        animate={{ x: showingActions ? -actionWidth : 0 }}
+        transition={{ type: 'spring', damping: 25, stiffness: 300 }}
         style={{ x, touchAction: 'pan-y' }}
-        className={cn(
-          'relative bg-card',
-          isDragging && 'cursor-grabbing'
-        )}
+        className="relative bg-card"
       >
         {children}
       </motion.div>
 
-      {/* Tap outside to close overlay when showing actions */}
-      <AnimatePresence>
-        {showingActions && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-10"
-            onClick={() => setShowingActions(false)}
-            style={{ pointerEvents: 'auto', background: 'transparent' }}
-          />
-        )}
-      </AnimatePresence>
+      {/* Tap overlay to close when showing actions */}
+      {showingActions && (
+        <div
+          className="absolute inset-y-0 left-0 z-10"
+          style={{ width: `calc(100% - ${actionWidth}px)` }}
+          onClick={closeActions}
+        />
+      )}
     </div>
   )
 }

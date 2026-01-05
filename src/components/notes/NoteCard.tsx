@@ -47,9 +47,13 @@ export function NoteCard({ note, isSelected, onClick }: NoteCardProps) {
     }
   }
 
+  const handleSwipeMove = () => {
+    setShowMoveDialog(true)
+  }
+
   return (
     <>
-      <SwipeableCard onDelete={handleSwipeDelete} deleteLabel="Trash">
+      <SwipeableCard onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
         <div
           onClick={onClick}
           className={cn(
