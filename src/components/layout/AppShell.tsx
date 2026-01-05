@@ -38,6 +38,8 @@ export function AppShell() {
   const [showSaveFeedback, setShowSaveFeedback] = useState(false)
   const [isTrashView, setIsTrashView] = useState(false)
   const [isSmartSearch, setIsSmartSearch] = useState(false)
+  const [isInfoSheetOpen, setIsInfoSheetOpen] = useState(false)
+  const [autoSuggestTags, setAutoSuggestTags] = useState(false)
 
   // Panel resize state (desktop only)
   const [sidebarWidth, setSidebarWidth] = useState(240) // w-60 = 240px
@@ -432,6 +434,12 @@ export function AppShell() {
                               setSelectedNoteId(id)
                             }}
                             isMobile={true}
+                            open={isInfoSheetOpen}
+                            onOpenChange={(open) => {
+                              setIsInfoSheetOpen(open)
+                              if (!open) setAutoSuggestTags(false)
+                            }}
+                            autoSuggestTags={autoSuggestTags}
                           />
                         </div>
                       )}
@@ -486,7 +494,8 @@ export function AppShell() {
               setIsAIChatOpen(true)
             }}
             onSuggestTags={() => {
-              // TODO: Implement suggest tags action
+              setAutoSuggestTags(true)
+              setIsInfoSheetOpen(true)
             }}
           />
         )}

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { Pin, MoreHorizontal, FolderInput, Trash2, Pin as PinIcon } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
@@ -12,6 +12,7 @@ import { useIsMobile } from '@/hooks/useMobile'
 import type { NotePreview } from '@/lib/types'
 
 const LONG_PRESS_DURATION = 500 // ms
+const DRAG_COOLDOWN = 3000 // ms - disable swipe for this long after drag ends
 
 interface NoteCardProps {
   note: NotePreview
@@ -37,6 +38,28 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
 
   const isDragging = drag?.isDragging && drag?.draggedNote?.id === note.id
   const isAnyDragging = drag?.isDragging ?? false
+
+  // Check if we're in cooldown period after drag ended
+  const [swipeDisabledUntil, setSwipeDisabledUntil] = useState<number>(0)
+
+  // When drag ends, set cooldown timer
+  useEffect(() => {
+    if (drag?.dragEndedAt) {
+      const cooldownEnd = drag.dragEndedAt + DRAG_COOLDOWN
+      setSwipeDisabledUntil(cooldownEnd)
+
+      // Schedule re-render when cooldown expires
+      const remainingTime = cooldownEnd - Date.now()
+      if (remainingTime > 0) {
+        const timer = setTimeout(() => {
+          setSwipeDisabledUntil(0)
+        }, remainingTime)
+        return () => clearTimeout(timer)
+      }
+    }
+  }, [drag?.dragEndedAt])
+
+  const isInDragCooldown = Date.now() < swipeDisabledUntil
 
   const handleMouseDown = useCallback((e: React.MouseEvent) => {
     // Only enable on desktop and if drag context is available
@@ -110,7 +133,7 @@ export function NoteCard({ note, isSelected, onClick, folderColor }: NoteCardPro
 
   return (
     <>
-      <SwipeableCard disabled={isMouseDown || isAnyDragging} onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
+      <SwipeableCard disabled={isMouseDown || isAnyDragging || isInDragCooldown} onDelete={handleSwipeDelete} onMove={handleSwipeMove}>
         <div
           onClick={handleClick}
           onMouseDown={handleMouseDown}

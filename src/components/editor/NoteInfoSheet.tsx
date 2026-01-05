@@ -1,11 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Info, X, Download, Calendar, Tag, FileText, RefreshCw } from 'lucide-react'
+import { Info, X, Download, Calendar, Tag, FileText, RefreshCw, Sparkles, Plus } from 'lucide-react'
 import { format, parseISO } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { TagPicker } from '@/components/tags/TagPicker'
-import { useRelatedNotes } from '@/hooks/useAI'
+import { useRelatedNotes, useAISuggestions } from '@/hooks/useAI'
 import { useNote } from '@/hooks/useNotes'
+import { useTags, useCreateTag, useAddTagToNote } from '@/hooks/useTags'
 import { useCreateBlockNote } from '@blocknote/react'
 import { downloadMarkdown } from '@/lib/exporters/markdown'
 import { extractFirstLine } from '@/lib/utils'
@@ -14,13 +15,68 @@ interface NoteInfoSheetProps {
   noteId: string
   onNoteSelect?: (noteId: string) => void
   isMobile?: boolean
+  open?: boolean
+  onOpenChange?: (open: boolean) => void
+  autoSuggestTags?: boolean
 }
 
-export function NoteInfoSheet({ noteId, onNoteSelect, isMobile = false }: NoteInfoSheetProps) {
-  const [isOpen, setIsOpen] = useState(false)
+export function NoteInfoSheet({ noteId, onNoteSelect, isMobile = false, open, onOpenChange, autoSuggestTags = false }: NoteInfoSheetProps) {
+  const [internalOpen, setInternalOpen] = useState(false)
+
+  // Support controlled and uncontrolled mode
+  const isOpen = open !== undefined ? open : internalOpen
+  const setIsOpen = (value: boolean) => {
+    setInternalOpen(value)
+    onOpenChange?.(value)
+  }
+  const [suggestedTags, setSuggestedTags] = useState<string[]>([])
+  const [hasAutoSuggested, setHasAutoSuggested] = useState(false)
   const { data: note } = useNote(noteId)
   const { relatedNotes, isLoading, error, fetchRelatedNotes } = useRelatedNotes(noteId)
+  const { generateSuggestions, isGenerating } = useAISuggestions()
+
+  // Auto-suggest tags when opened with autoSuggestTags flag
+  useEffect(() => {
+    if (isOpen && autoSuggestTags && !hasAutoSuggested && !isGenerating) {
+      setHasAutoSuggested(true)
+      generateSuggestions(noteId, 'tags').then(result => {
+        if (result?.tags) {
+          setSuggestedTags(result.tags)
+        }
+      })
+    }
+    // Reset flag when sheet closes
+    if (!isOpen) {
+      setHasAutoSuggested(false)
+    }
+  }, [isOpen, autoSuggestTags, hasAutoSuggested, isGenerating, noteId, generateSuggestions])
+  const { data: allTags = [] } = useTags()
+  const createTag = useCreateTag()
+  const addTag = useAddTagToNote()
   const editor = useCreateBlockNote()
+
+  const handleSuggestTags = async () => {
+    const result = await generateSuggestions(noteId, 'tags')
+    if (result?.tags) {
+      setSuggestedTags(result.tags)
+    }
+  }
+
+  const handleAddSuggestedTag = async (tagName: string) => {
+    // Check if tag already exists
+    const existingTag = allTags.find(t => t.name.toLowerCase() === tagName.toLowerCase())
+
+    if (existingTag) {
+      await addTag.mutateAsync({ noteId, tagId: existingTag.id })
+    } else {
+      // Create new tag and add it
+      const newTag = await createTag.mutateAsync({ name: tagName, color: 'gray' })
+      await addTag.mutateAsync({ noteId, tagId: newTag.id })
+    }
+
+    // Remove from suggestions
+    setSuggestedTags(prev => prev.filter(t => t !== tagName))
+  }
 
   const formattedDate = note ? format(parseISO(note.updated_at), "MMMM d, yyyy 'at' h:mm a") : ''
 
@@ -125,8 +181,40 @@ export function NoteInfoSheet({ noteId, onNoteSelect, isMobile = false }: NoteIn
                       <Tag className="h-5 w-5 text-muted-foreground" />
                     </div>
                     <div className="flex-1 min-w-0 pt-1.5">
-                      <p className="text-sm text-muted-foreground mb-2">Tags</p>
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-muted-foreground">Tags</p>
+                        <button
+                          onClick={handleSuggestTags}
+                          disabled={isGenerating}
+                          className="flex items-center gap-1 px-2 py-1 text-xs rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors disabled:opacity-50"
+                        >
+                          <Sparkles className={cn('h-3 w-3', isGenerating && 'animate-pulse')} />
+                          {isGenerating ? 'Thinking...' : 'Suggest'}
+                        </button>
+                      </div>
                       <TagPicker noteId={noteId} />
+
+                      {/* AI Suggested Tags */}
+                      {suggestedTags.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-border/50">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
+                            <Sparkles className="h-3 w-3 text-primary" />
+                            Suggested tags (tap to add)
+                          </p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {suggestedTags.map(tag => (
+                              <button
+                                key={tag}
+                                onClick={() => handleAddSuggestedTag(tag)}
+                                className="inline-flex items-center gap-1 px-2.5 py-1 text-xs rounded-full bg-primary/10 text-primary hover:bg-primary/20 transition-colors"
+                              >
+                                <Plus className="h-3 w-3" />
+                                {tag}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

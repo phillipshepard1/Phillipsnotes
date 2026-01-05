@@ -16,6 +16,8 @@ interface DragContextValue extends DragState {
   unregisterDropZone: (id: string) => void
   // Current hover target
   hoveredDropZone: string | null
+  // Timestamp when drag ended (for cooldown)
+  dragEndedAt: number | null
 }
 
 const DragContext = createContext<DragContextValue | null>(null)
@@ -44,6 +46,7 @@ export function DragProvider({ children }: DragProviderProps) {
     dragPosition: { x: 0, y: 0 },
   })
   const [hoveredDropZone, setHoveredDropZone] = useState<string | null>(null)
+  const [dragEndedAt, setDragEndedAt] = useState<number | null>(null)
   const dropZonesRef = useRef<Map<string, HTMLElement>>(new Map())
 
   const startDrag = useCallback((note: NotePreview, position: { x: number; y: number }) => {
@@ -83,6 +86,7 @@ export function DragProvider({ children }: DragProviderProps) {
       dragPosition: { x: 0, y: 0 },
     })
     setHoveredDropZone(null)
+    setDragEndedAt(Date.now())
   }, [])
 
   const registerDropZone = useCallback((id: string, element: HTMLElement) => {
@@ -123,6 +127,7 @@ export function DragProvider({ children }: DragProviderProps) {
   const value: DragContextValue = {
     ...state,
     hoveredDropZone,
+    dragEndedAt,
     startDrag,
     updatePosition,
     endDrag,
