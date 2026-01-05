@@ -183,8 +183,8 @@ function ImportAppContent() {
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center gap-3">
-            {activeImport ? (
+          <div className="flex items-center gap-2">
+            {activeImport && (
               <button
                 onClick={handleBack}
                 disabled={isImporting}
@@ -192,25 +192,15 @@ function ImportAppContent() {
               >
                 <ArrowLeft className="w-5 h-5 text-muted-foreground" />
               </button>
-            ) : (
-              <a
-                href="/"
-                className="p-2 -ml-2 rounded-lg hover:bg-secondary transition-colors"
-                title="Back to Notes"
-              >
-                <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-              </a>
             )}
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-emerald-500/10">
-                <Download className="w-5 h-5 text-emerald-500" />
-              </div>
-              <h1 className="font-semibold text-lg">
-                {activeImport
-                  ? IMPORT_OPTIONS.find((o) => o.id === activeImport)?.label
-                  : 'Import Notes'}
-              </h1>
+            <div className="p-1.5 rounded-lg bg-emerald-500/10">
+              <Download className="w-5 h-5 text-emerald-500" />
             </div>
+            <h1 className="font-semibold text-lg">
+              {activeImport
+                ? IMPORT_OPTIONS.find((o) => o.id === activeImport)?.label
+                : 'Import Notes'}
+            </h1>
           </div>
         </div>
       </header>

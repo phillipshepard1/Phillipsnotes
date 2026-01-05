@@ -9,7 +9,7 @@ import { useAIChat, useSemanticSearch } from '@/hooks/useAI'
 import { ChatMessage } from '@/components/ai/ChatMessage'
 import { ChatInput } from '@/components/ai/ChatInput'
 import { SemanticSearchResults } from '@/components/search/SemanticSearchResults'
-import { Sparkles, Search, Trash2, ArrowLeft, X } from 'lucide-react'
+import { Sparkles, Search, Trash2, X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 function AIAppContent() {
@@ -73,20 +73,11 @@ function AIAppContent() {
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
         <div className="flex items-center justify-between px-4 h-14">
-          <div className="flex items-center gap-3">
-            <a
-              href="/"
-              className="p-2 -ml-2 rounded-lg hover:bg-secondary transition-colors"
-              title="Back to Notes"
-            >
-              <ArrowLeft className="w-5 h-5 text-muted-foreground" />
-            </a>
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-primary/10">
-                <Sparkles className="w-5 h-5 text-primary" />
-              </div>
-              <h1 className="font-semibold text-lg">Phillips AI</h1>
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-primary/10">
+              <Sparkles className="w-5 h-5 text-primary" />
             </div>
+            <h1 className="font-semibold text-lg">Phillips AI</h1>
           </div>
           {activeTab === 'chat' && messages.length > 0 && (
             <button
