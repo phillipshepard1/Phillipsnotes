@@ -44,6 +44,9 @@ export function NoteEditor({ noteId }: NoteEditorProps) {
       const noteContent = note.content as Block[]
       if (Array.isArray(noteContent) && noteContent.length > 0) {
         editor.replaceBlocks(editor.document, noteContent)
+      } else {
+        // Clear editor for new/empty notes - prevents previous note content from persisting
+        editor.replaceBlocks(editor.document, [])
       }
       // Allow a brief moment for editor to settle before enabling saves
       setTimeout(() => {
