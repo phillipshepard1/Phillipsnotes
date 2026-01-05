@@ -1,9 +1,52 @@
-import { useRef, useEffect } from 'react'
-import { X, Trash2, Sparkles } from 'lucide-react'
+import { useRef, useEffect, useState } from 'react'
+import { X, Trash2, Sparkles, FileText } from 'lucide-react'
 import { ChatMessage } from './ChatMessage'
 import { ChatInput } from './ChatInput'
 import { useAIChat } from '@/hooks/useAI'
+import { useCreateNote } from '@/hooks/useNotes'
 import { cn } from '@/lib/utils'
+
+interface Message {
+  id: string
+  role: 'user' | 'assistant'
+  content: string
+  sources?: Array<{ noteId: string; title: string }>
+  isStreaming?: boolean
+}
+
+function convertChatToBlocks(messages: Message[]) {
+  const blocks: unknown[] = []
+
+  // First user message becomes the title
+  const firstUserMsg = messages.find(m => m.role === 'user')
+  const title = firstUserMsg?.content.slice(0, 100) || 'AI Chat'
+
+  // Add each message as formatted blocks
+  for (const msg of messages) {
+    // Role header (h3)
+    blocks.push({
+      type: 'heading',
+      props: { level: 3 },
+      content: [{ type: 'text', text: msg.role === 'user' ? 'You' : 'AI Assistant' }],
+    })
+
+    // Message content as paragraphs
+    const paragraphs = msg.content.split('\n\n')
+    for (const para of paragraphs) {
+      if (para.trim()) {
+        blocks.push({
+          type: 'paragraph',
+          content: [{ type: 'text', text: para }],
+        })
+      }
+    }
+
+    // Empty paragraph as spacer
+    blocks.push({ type: 'paragraph', content: [] })
+  }
+
+  return { title, blocks }
+}
 
 interface AIChatSidebarProps {
   isOpen: boolean
@@ -21,6 +64,8 @@ export function AIChatSidebar({
   const { messages, isLoading, error, sendMessage, clearMessages } = useAIChat({
     noteId,
   })
+  const createNote = useCreateNote()
+  const [isSaving, setIsSaving] = useState(false)
 
   // Handle source click: navigate to note and close sidebar
   const handleSourceClick = (clickedNoteId: string) => {
@@ -29,6 +74,32 @@ export function AIChatSidebar({
       onClose() // Close sidebar so user can see the note
     }
   }
+
+  // Save chat as a new note
+  const handleSaveAsNote = async () => {
+    if (messages.length === 0 || isSaving) return
+
+    setIsSaving(true)
+    try {
+      const { title, blocks } = convertChatToBlocks(messages as Message[])
+
+      const note = await createNote.mutateAsync({
+        title,
+        content: blocks,
+      })
+
+      // Navigate to the new note and close sidebar
+      if (onNoteSelect) {
+        onNoteSelect(note.id)
+      }
+      onClose()
+    } catch (error) {
+      console.error('Failed to save chat as note:', error)
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // Auto-scroll to bottom on new messages
@@ -61,13 +132,23 @@ export function AIChatSidebar({
         </div>
         <div className="flex items-center gap-1">
           {messages.length > 0 && (
-            <button
-              onClick={clearMessages}
-              className="p-2 rounded-lg hover:bg-secondary transition-colors"
-              title="Clear chat"
-            >
-              <Trash2 className="w-4 h-4 text-muted-foreground" />
-            </button>
+            <>
+              <button
+                onClick={handleSaveAsNote}
+                disabled={isSaving}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors disabled:opacity-50"
+                title="Save as note"
+              >
+                <FileText className="w-4 h-4 text-muted-foreground" />
+              </button>
+              <button
+                onClick={clearMessages}
+                className="p-2 rounded-lg hover:bg-secondary transition-colors"
+                title="Clear chat"
+              >
+                <Trash2 className="w-4 h-4 text-muted-foreground" />
+              </button>
+            </>
           )}
           <button
             onClick={onClose}
